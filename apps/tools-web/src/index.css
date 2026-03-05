@@ -1,7 +1,16 @@
 :root {
-  font-family: "Noto Serif SC", "Source Han Serif SC", "Songti SC", serif;
-  color: #111111;
-  background-color: #f8f7f3;
+  color-scheme: light;
+  --ink-strong: #0f0f0f;
+  --ink-medium: #2f2f2f;
+  --ink-soft: #505050;
+  --paper-base: #f8f7f3;
+  --paper-panel: #fdfcf8;
+  --line: #1f1f1f;
+  --line-soft: #a3a3a3;
+  --shadow: rgba(0, 0, 0, 0.08);
+  font-family: "Source Han Serif SC", "Noto Serif SC", "Songti SC", serif;
+  color: var(--ink-strong);
+  background-color: var(--paper-base);
 }
 
 * {
@@ -11,10 +20,155 @@
 body {
   margin: 0;
   min-height: 100vh;
+  background:
+    linear-gradient(180deg, #fbfaf6 0%, #f3f1ec 100%);
 }
 
-main {
-  max-width: 960px;
+a {
+  color: inherit;
+}
+
+.catalog-page,
+.tool-page {
+  width: min(1080px, 100% - 2rem);
   margin: 0 auto;
-  padding: 3rem 1.25rem;
+  padding: 3rem 0 4rem;
+}
+
+.hero {
+  border: 1px solid var(--line);
+  background: var(--paper-panel);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 6px 6px 0 var(--shadow);
+}
+
+.hero h1 {
+  margin: 0.2rem 0 0.9rem;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+}
+
+.hero-eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.11em;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+}
+
+.hero-text {
+  margin: 0;
+  color: var(--ink-medium);
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  border: 1px solid var(--line);
+  background: var(--paper-panel);
+  padding: 1rem;
+  min-height: 250px;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.tool-card:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 4px 4px 0 var(--line-soft);
+}
+
+.tool-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: baseline;
+}
+
+.tool-card-head h2 {
+  margin: 0;
+  font-size: 1.35rem;
+}
+
+.mode-chip {
+  border: 1px solid var(--line);
+  padding: 0.12rem 0.45rem;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+.tool-description {
+  margin: 0;
+  color: var(--ink-medium);
+  line-height: 1.5;
+}
+
+.tool-slug {
+  margin: 0;
+  color: var(--ink-strong);
+  font-family: "Iowan Old Style", "Times New Roman", serif;
+}
+
+.tool-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag {
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+.tool-link {
+  margin-top: auto;
+  display: inline-block;
+  border: 1px solid var(--line);
+  padding: 0.45rem 0.7rem;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.tool-link:hover {
+  background: var(--ink-strong);
+  color: #ffffff;
+}
+
+.tool-header {
+  border: 1px solid var(--line);
+  padding: 1.25rem;
+  background: var(--paper-panel);
+  margin-bottom: 1rem;
+}
+
+.tool-header h1 {
+  margin: 0.2rem 0 0.6rem;
+}
+
+.tool-header p {
+  margin: 0;
+  color: var(--ink-medium);
+}
+
+.tool-panel {
+  border: 1px solid var(--line-soft);
+  padding: 1rem;
+  background: #fffefc;
+  margin-bottom: 0.75rem;
+}
+
+.tool-panel h2 {
+  margin: 0 0 0.45rem;
+  font-size: 1rem;
+}
+
+.tool-panel p {
+  margin: 0;
+  color: var(--ink-medium);
 }
