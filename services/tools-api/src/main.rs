@@ -6,7 +6,13 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use std::{collections::HashMap, fs, net::SocketAddr, path::PathBuf, time::{Duration, Instant}};
+use std::{
+    collections::HashMap,
+    fs,
+    net::SocketAddr,
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 use tracing::{error, info};
 
 const MAX_INPUT_CHARS: usize = 20_000;
@@ -112,11 +118,9 @@ async fn main() {
 }
 
 fn load_tool_manifests() -> Result<Vec<ToolManifest>, String> {
-    let repo_root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../..")
-        .canonicalize()
-        .map_err(|error| format!("resolve repo root: {error}"))?;
-    let registry_dir = repo_root.join("registry/tools");
+    let registry_dir = std::env::var("TOOLS_REGISTRY_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|_| PathBuf::from("registry/tools"));
 
     let entries = fs::read_dir(&registry_dir)
         .map_err(|error| format!("read registry directory {}: {error}", registry_dir.display()))?;
@@ -241,16 +245,13 @@ async fn run_tool(
         );
     }
 
-    let execution = tokio::time::timeout(
-        Duration::from_secs(RUN_TIMEOUT_SECONDS),
-        async {
-            match tool.id.as_str() {
-                "subb-server-sample" => Ok(json!({ "word_count": tool_core::count_words(text) })),
-                "subc-hybrid-sample" => Ok(json!({ "result": tool_core::reverse_text(text) })),
-                _ => Err(String::from("tool has no server runtime implementation")),
-            }
-        },
-    )
+    let execution = tokio::time::timeout(Duration::from_secs(RUN_TIMEOUT_SECONDS), async {
+        match tool.id.as_str() {
+            "subb-server-sample" => Ok(json!({ "word_count": tool_core::count_words(text) })),
+            "subc-hybrid-sample" => Ok(json!({ "result": tool_core::reverse_text(text) })),
+            _ => Err(String::from("tool has no server runtime implementation")),
+        }
+    })
     .await;
 
     let result = match execution {

@@ -1,0 +1,19 @@
+[Unit]
+Description=tools-api container service
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+EnvironmentFile=-/etc/tools-api/tools-api.env
+Environment=TOOLS_API_IMAGE=ghcr.io/example/tools-api:latest
+ExecStartPre=-/usr/bin/docker rm -f tools-api
+ExecStart=/usr/bin/docker run --rm --name tools-api -p 127.0.0.1:18080:8080 -e RUST_LOG=${RUST_LOG:-info} ${TOOLS_API_IMAGE}
+ExecStop=/usr/bin/docker stop tools-api
+Restart=always
+RestartSec=3
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target
