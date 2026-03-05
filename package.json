@@ -1,0 +1,13 @@
+{
+  "name": "tools-subsite",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "apps/tools-web"
+  ],
+  "scripts": {
+    "dev:web": "npm run --workspace apps/tools-web dev",
+    "build:web": "npm run --workspace apps/tools-web build",
+    "lint:web": "npm run --workspace apps/tools-web lint"
+  }
+}

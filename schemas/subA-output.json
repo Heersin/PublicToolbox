@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "subA output",
+  "type": "object",
+  "required": ["result"],
+  "properties": {
+    "result": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
