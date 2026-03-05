@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+if [ -f "${HOME}/.cargo/env" ]; then
+  # shellcheck disable=SC1090
+  . "${HOME}/.cargo/env"
+fi
+
+if command -v wasm-pack >/dev/null 2>&1; then
+  WASM_PACK_BIN="$(command -v wasm-pack)"
+elif [ -x "${HOME}/.cargo/bin/wasm-pack" ]; then
+  WASM_PACK_BIN="${HOME}/.cargo/bin/wasm-pack"
+else
+  echo "wasm-pack is required. Install with: cargo install wasm-pack" >&2
+  exit 1
+fi
+
+if command -v rustup >/dev/null 2>&1; then
+  rustup target add wasm32-unknown-unknown
+fi
+
+cd "${REPO_ROOT}"
+"${WASM_PACK_BIN}" build "${REPO_ROOT}/crates/tool-wasm" \
+  --target web \
+  --out-dir "${REPO_ROOT}/apps/tools-web/src/wasm/pkg" \
+  --out-name tool_wasm \
+  --release

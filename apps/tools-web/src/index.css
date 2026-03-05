@@ -172,3 +172,38 @@ a {
   margin: 0;
   color: var(--ink-medium);
 }
+
+.tool-textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: #fffffd;
+  padding: 0.65rem;
+  resize: vertical;
+  color: var(--ink-strong);
+  font-family: inherit;
+}
+
+.tool-button {
+  border: 1px solid var(--line);
+  background: var(--paper-panel);
+  color: var(--ink-strong);
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+}
+
+.tool-button:hover:not(:disabled) {
+  background: var(--ink-strong);
+  color: #ffffff;
+}
+
+.tool-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.tool-result {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--ink-strong);
+}
