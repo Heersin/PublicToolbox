@@ -6,6 +6,7 @@
     "apps/tools-web"
   ],
   "scripts": {
+    "validate:manifests": "node scripts/validate-manifests.mjs",
     "generate:catalog": "node scripts/build-tool-catalog.mjs",
     "build:wasm": "./scripts/build-wasm.sh",
     "dev:web": "npm run --workspace apps/tools-web dev",
@@ -13,6 +14,8 @@
     "lint:web": "npm run --workspace apps/tools-web lint"
   },
   "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
     "yaml": "^2.8.1"
   }
 }
