@@ -30,5 +30,20 @@ export const toolManifests: ToolManifest[] = [
     "input_schema": "schemas/subA-input.json",
     "output_schema": "schemas/subA-output.json",
     "wasm_entry": "reverse_text"
+  },
+  {
+    "id": "subb-server-sample",
+    "slug": "subB",
+    "name": "墨点计词",
+    "description": "在服务端统计文本词数，作为 API 执行示例。",
+    "tags": [
+      "text",
+      "server"
+    ],
+    "version": "0.1.0",
+    "execution_mode": "server-api",
+    "input_schema": "schemas/subB-input.json",
+    "output_schema": "schemas/subB-output.json",
+    "api_endpoint": "/api/tools/v1/run/subb-server-sample"
   }
 ];

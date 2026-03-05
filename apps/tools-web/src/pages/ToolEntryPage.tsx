@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { getToolBySlug } from '../lib/toolCatalog';
+import { runServerTool } from '../lib/runtime/serverRuntime';
 import { runWasmTool } from '../lib/runtime/wasmRuntime';
 
 export default function ToolEntryPage() {
@@ -13,6 +14,10 @@ export default function ToolEntryPage() {
 
   const canRunWasm = useMemo(
     () => tool?.execution_mode === 'client-wasm' && Boolean(tool.wasm_entry),
+    [tool],
+  );
+  const canRunServer = useMemo(
+    () => tool?.execution_mode === 'server-api' && Boolean(tool.api_endpoint),
     [tool],
   );
 
@@ -31,11 +36,6 @@ export default function ToolEntryPage() {
   const activeTool = tool;
 
   async function handleRun() {
-    if (!canRunWasm) {
-      setErrorMessage('当前工具未启用 WASM 执行。');
-      return;
-    }
-
     if (!textInput.trim()) {
       setErrorMessage('请输入文本后再执行。');
       return;
@@ -44,11 +44,23 @@ export default function ToolEntryPage() {
     try {
       setRunning(true);
       setErrorMessage('');
-      const output = await runWasmTool(activeTool.wasm_entry!, textInput);
-      setResult(output);
+
+      if (canRunWasm) {
+        const output = await runWasmTool(activeTool.wasm_entry!, textInput);
+        setResult(output);
+        return;
+      }
+
+      if (canRunServer) {
+        const output = await runServerTool(activeTool.api_endpoint!, activeTool.version, textInput);
+        setResult(JSON.stringify(output, null, 2));
+        return;
+      }
+
+      setErrorMessage('当前工具未实现可执行运行时。');
     } catch (error) {
       setResult('');
-      setErrorMessage(error instanceof Error ? error.message : 'WASM 执行失败');
+      setErrorMessage(error instanceof Error ? error.message : '工具执行失败');
     } finally {
       setRunning(false);
     }
@@ -76,7 +88,12 @@ export default function ToolEntryPage() {
       <section className="tool-panel">
         <h2>执行区</h2>
         <p>当前执行模式：{activeTool.execution_mode}</p>
-        <button className="tool-button" type="button" onClick={handleRun} disabled={running || !canRunWasm}>
+        <button
+          className="tool-button"
+          type="button"
+          onClick={handleRun}
+          disabled={running || (!canRunWasm && !canRunServer)}
+        >
           {running ? '执行中...' : '执行'}
         </button>
       </section>
