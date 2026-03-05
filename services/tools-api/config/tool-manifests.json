@@ -28,5 +28,21 @@
     "input_schema": "schemas/subB-input.json",
     "output_schema": "schemas/subB-output.json",
     "api_endpoint": "/api/tools/v1/run/subb-server-sample"
+  },
+  {
+    "id": "subc-hybrid-sample",
+    "slug": "subC",
+    "name": "墨迹双引擎",
+    "description": "默认浏览器 WASM 执行，失败时自动回退服务端。",
+    "tags": [
+      "text",
+      "hybrid"
+    ],
+    "version": "0.1.0",
+    "execution_mode": "hybrid",
+    "input_schema": "schemas/subC-input.json",
+    "output_schema": "schemas/subC-output.json",
+    "wasm_entry": "reverse_text",
+    "api_endpoint": "/api/tools/v1/run/subc-hybrid-sample"
   }
 ]

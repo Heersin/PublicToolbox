@@ -1,13 +1,16 @@
 use axum::{
     Json, Router,
-    extract::{Path, State},
+    extract::{DefaultBodyLimit, Path, State},
     http::StatusCode,
     routing::{get, post},
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
-use std::{collections::HashMap, fs, net::SocketAddr, path::PathBuf, time::Instant};
+use std::{collections::HashMap, fs, net::SocketAddr, path::PathBuf, time::{Duration, Instant}};
 use tracing::{error, info};
+
+const MAX_INPUT_CHARS: usize = 20_000;
+const RUN_TIMEOUT_SECONDS: u64 = 3;
 
 #[derive(Clone)]
 struct AppState {
@@ -93,6 +96,7 @@ async fn main() {
         .route("/api/readyz", get(readyz))
         .route("/api/tools/v1/list", get(list_tools))
         .route("/api/tools/v1/run/{tool_id}", post(run_tool))
+        .layer(DefaultBodyLimit::max(1_048_576))
         .with_state(app_state);
 
     let addr: SocketAddr = "0.0.0.0:8080".parse().expect("valid listen address");
@@ -210,9 +214,58 @@ async fn run_tool(
         );
     }
 
-    let result = match tool.id.as_str() {
-        "subb-server-sample" => run_word_count_tool(&request.input),
-        _ => Err(String::from("tool has no server runtime implementation")),
+    let text = match request.input.get("text").and_then(Value::as_str) {
+        Some(value) => value,
+        None => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(error_response(
+                    started.elapsed().as_millis(),
+                    "INVALID_INPUT",
+                    String::from("input.text must be a string"),
+                    tool.version.clone(),
+                )),
+            );
+        }
+    };
+
+    if text.len() > MAX_INPUT_CHARS {
+        return (
+            StatusCode::BAD_REQUEST,
+            Json(error_response(
+                started.elapsed().as_millis(),
+                "INPUT_TOO_LARGE",
+                format!("input text exceeds {MAX_INPUT_CHARS} characters"),
+                tool.version.clone(),
+            )),
+        );
+    }
+
+    let execution = tokio::time::timeout(
+        Duration::from_secs(RUN_TIMEOUT_SECONDS),
+        async {
+            match tool.id.as_str() {
+                "subb-server-sample" => Ok(json!({ "word_count": tool_core::count_words(text) })),
+                "subc-hybrid-sample" => Ok(json!({ "result": tool_core::reverse_text(text) })),
+                _ => Err(String::from("tool has no server runtime implementation")),
+            }
+        },
+    )
+    .await;
+
+    let result = match execution {
+        Ok(inner) => inner,
+        Err(_) => {
+            return (
+                StatusCode::REQUEST_TIMEOUT,
+                Json(error_response(
+                    started.elapsed().as_millis(),
+                    "RUN_TIMEOUT",
+                    format!("tool execution exceeded {RUN_TIMEOUT_SECONDS} seconds"),
+                    tool.version.clone(),
+                )),
+            );
+        }
     };
 
     match result {
@@ -239,16 +292,6 @@ async fn run_tool(
             )),
         ),
     }
-}
-
-fn run_word_count_tool(input: &Value) -> Result<Value, String> {
-    let text = input
-        .get("text")
-        .and_then(Value::as_str)
-        .ok_or_else(|| String::from("input.text must be a string"))?;
-
-    let word_count = tool_core::count_words(text);
-    Ok(json!({ "word_count": word_count }))
 }
 
 fn error_response(duration_ms: u128, code: &'static str, message: String, version: String) -> ApiResponse<Value> {
