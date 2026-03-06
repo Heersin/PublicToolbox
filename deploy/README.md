@@ -1,5 +1,9 @@
 # Deploy Guide
 
+本文档保留“执行命令入口”，完整版生产部署说明请优先阅读：
+
+- [`../docs/DEPLOY_PRODUCTION.md`](../docs/DEPLOY_PRODUCTION.md)
+
 ## 1) Nginx (native)
 - Copy `deploy/nginx/tools.domain.xxx.conf` to `/etc/nginx/conf.d/tools.domain.xxx.conf`.
 - Verify and reload:
