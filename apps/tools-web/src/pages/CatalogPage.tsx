@@ -141,7 +141,7 @@ export default function CatalogPage() {
         >
           <div className="card-rail">
             {tools.map((tool) => (
-              <article key={tool.id} className="tool-strip-card">
+              <Link key={tool.id} to={`/${tool.slug}`} className="tool-strip-card" aria-label={`进入 ${tool.name}`}>
                 <h2 className="strip-title">{tool.name}</h2>
                 <div className="strip-tags">
                   {tool.tags.slice(0, 3).map((tag) => (
@@ -150,10 +150,7 @@ export default function CatalogPage() {
                     </span>
                   ))}
                 </div>
-                <Link to={`/${tool.slug}`} className="tool-link strip-link">
-                  进入
-                </Link>
-              </article>
+              </Link>
             ))}
           </div>
         </div>

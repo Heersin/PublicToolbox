@@ -126,11 +126,17 @@ a {
   align-items: center;
   padding: 2.5rem 0.7rem 0.85rem;
   transition: transform 140ms ease, box-shadow 140ms ease;
+  text-decoration: none;
 }
 
 .tool-strip-card:hover {
   transform: translateY(-2px);
   box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.25);
+}
+
+.tool-strip-card:focus-visible {
+  outline: 2px solid #f3f3f3;
+  outline-offset: 2px;
 }
 
 .strip-title {
@@ -141,6 +147,9 @@ a {
   writing-mode: vertical-rl;
   text-orientation: mixed;
   flex: 1;
+  align-self: flex-end;
+  text-align: right;
+  padding-right: 0.08rem;
 }
 
 .strip-tags {
@@ -155,12 +164,6 @@ a {
   border-bottom: 1px solid var(--line-soft);
   font-size: 0.78rem;
   color: #1e1e1e;
-}
-
-.strip-link {
-  margin-top: auto;
-  width: 100%;
-  text-align: center;
 }
 
 .edge-zone {
