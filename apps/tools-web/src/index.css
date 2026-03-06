@@ -90,10 +90,12 @@ a {
   position: absolute;
   left: 0;
   right: 0;
-  top: 1.18rem;
+  top: 1.24rem;
   height: 5px;
   background: #596170;
   opacity: 0.9;
+  z-index: 9;
+  pointer-events: none;
 }
 
 .rope-base {
@@ -157,7 +159,7 @@ a {
   writing-mode: vertical-rl;
   text-orientation: mixed;
   position: absolute;
-  top: 0.42rem;
+  top: 0.7rem;
   right: 0.5rem;
   text-align: right;
   padding-right: 0;
