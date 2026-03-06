@@ -1,73 +1,46 @@
-# React + TypeScript + Vite
+# tools-web
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+`tools-web` 是 `tools-subsite` 的前端子应用，负责：
 
-Currently, two official plugins are available:
+1. 工具总览页（书简卡片滚动布局）。
+2. 工具路由页（`/:toolSlug`）。
+3. 根据 `execution_mode` 调用 WASM / API / Hybrid 执行链路。
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 目录说明
 
-## React Compiler
+- `src/pages/CatalogPage.tsx`：工具总览页
+- `src/pages/ToolEntryPage.tsx`：工具执行页
+- `src/lib/runtime/wasmRuntime.ts`：WASM 运行时
+- `src/lib/runtime/serverRuntime.ts`：服务端 API 运行时
+- `src/generated/tool-manifests.ts`：由脚本生成，不手改
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 常用命令
 
-## Expanding the ESLint configuration
+```bash
+# 开发
+npm run dev
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+# 构建（会自动执行 catalog + wasm）
+npm run build
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+# lint
+npm run lint
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 与上层仓库协作
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+推荐在仓库根目录执行统一命令：
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev:web
+npm run build:web
+npm run lint:web
+npm run generate:catalog
 ```
+
+## 相关文档
+
+- 根说明：[`../../README.md`](../../README.md)
+- 架构文档：[`../../docs/ARCHITECTURE.md`](../../docs/ARCHITECTURE.md)
+- 开发文档：[`../../docs/DEVELOPMENT.md`](../../docs/DEVELOPMENT.md)
+- 部署文档：[`../../docs/DEPLOY_PRODUCTION.md`](../../docs/DEPLOY_PRODUCTION.md)
