@@ -104,10 +104,9 @@ export default function CatalogPage() {
 
   return (
     <main className="catalog-page">
-      <header className="hero catalog-hero">
-        <p className="hero-eyebrow">TOOLS SUBSITE</p>
-        <h1>书简工具集</h1>
-        <p className="hero-text">黑白平面风格的工具总览页，按子路由进入各工具。</p>
+      <header className="catalog-title-wrap">
+        <h1 className="catalog-title">书简工具集</h1>
+        <div className="huiwen-underline" aria-hidden="true" />
       </header>
 
       <section className="catalog-rail-shell" aria-label="tool catalog">
