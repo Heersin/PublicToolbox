@@ -104,15 +104,15 @@ export default function CatalogPage() {
 
   return (
     <main className="catalog-page">
-      <header className="hero">
-        <p className="hero-eyebrow">Tools Subsite</p>
+      <header className="hero catalog-hero">
+        <p className="hero-eyebrow">TOOLS SUBSITE</p>
         <h1>书简工具集</h1>
-        <p className="hero-text">将鼠标移动到左右边缘热区，或直接拖拽书简卡片，浏览更多工具。</p>
+        <p className="hero-text">黑白平面风格的工具总览页，按子路由进入各工具。</p>
       </header>
 
       <section className="catalog-rail-shell" aria-label="tool catalog">
-        <div className="rail-guide rail-guide-top" />
-        <div className="rail-guide rail-guide-bottom" />
+        <div className="rope-line" />
+        <div className="rope-base" />
 
         <button
           type="button"
@@ -142,9 +142,7 @@ export default function CatalogPage() {
           <div className="card-rail">
             {tools.map((tool) => (
               <article key={tool.id} className="tool-strip-card">
-                <p className="strip-mode">{tool.execution_mode}</p>
                 <h2 className="strip-title">{tool.name}</h2>
-                <p className="strip-route">/{tool.slug}</p>
                 <div className="strip-tags">
                   {tool.tags.slice(0, 3).map((tag) => (
                     <span key={`${tool.id}-${tag}`} className="tag">

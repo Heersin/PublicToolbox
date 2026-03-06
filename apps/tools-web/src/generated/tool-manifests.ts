@@ -61,5 +61,149 @@ export const toolManifests: ToolManifest[] = [
     "output_schema": "schemas/subC-output.json",
     "wasm_entry": "reverse_text",
     "api_endpoint": "/api/tools/v1/run/subc-hybrid-sample"
+  },
+  {
+    "id": "sample-tool-d",
+    "slug": "subD",
+    "name": "示例工具4",
+    "description": "浏览器端文本倒序示例工具。",
+    "tags": [
+      "demo",
+      "text",
+      "wasm"
+    ],
+    "version": "0.1.0",
+    "execution_mode": "client-wasm",
+    "input_schema": "schemas/subA-input.json",
+    "output_schema": "schemas/subA-output.json",
+    "wasm_entry": "reverse_text"
+  },
+  {
+    "id": "sample-tool-e",
+    "slug": "subE",
+    "name": "示例工具5",
+    "description": "浏览器端文本倒序示例工具。",
+    "tags": [
+      "demo",
+      "writing",
+      "wasm"
+    ],
+    "version": "0.1.0",
+    "execution_mode": "client-wasm",
+    "input_schema": "schemas/subA-input.json",
+    "output_schema": "schemas/subA-output.json",
+    "wasm_entry": "reverse_text"
+  },
+  {
+    "id": "sample-tool-f",
+    "slug": "subF",
+    "name": "示例工具6",
+    "description": "浏览器端文本倒序示例工具。",
+    "tags": [
+      "demo",
+      "notes",
+      "wasm"
+    ],
+    "version": "0.1.0",
+    "execution_mode": "client-wasm",
+    "input_schema": "schemas/subA-input.json",
+    "output_schema": "schemas/subA-output.json",
+    "wasm_entry": "reverse_text"
+  },
+  {
+    "id": "sample-tool-g",
+    "slug": "subG",
+    "name": "示例工具7",
+    "description": "浏览器端文本倒序示例工具。",
+    "tags": [
+      "demo",
+      "text",
+      "wasm"
+    ],
+    "version": "0.1.0",
+    "execution_mode": "client-wasm",
+    "input_schema": "schemas/subA-input.json",
+    "output_schema": "schemas/subA-output.json",
+    "wasm_entry": "reverse_text"
+  },
+  {
+    "id": "sample-tool-h",
+    "slug": "subH",
+    "name": "示例工具8",
+    "description": "浏览器端文本倒序示例工具。",
+    "tags": [
+      "demo",
+      "script",
+      "wasm"
+    ],
+    "version": "0.1.0",
+    "execution_mode": "client-wasm",
+    "input_schema": "schemas/subA-input.json",
+    "output_schema": "schemas/subA-output.json",
+    "wasm_entry": "reverse_text"
+  },
+  {
+    "id": "sample-tool-i",
+    "slug": "subI",
+    "name": "示例工具9",
+    "description": "浏览器端文本倒序示例工具。",
+    "tags": [
+      "demo",
+      "text",
+      "wasm"
+    ],
+    "version": "0.1.0",
+    "execution_mode": "client-wasm",
+    "input_schema": "schemas/subA-input.json",
+    "output_schema": "schemas/subA-output.json",
+    "wasm_entry": "reverse_text"
+  },
+  {
+    "id": "sample-tool-j",
+    "slug": "subJ",
+    "name": "示例工具10",
+    "description": "浏览器端文本倒序示例工具。",
+    "tags": [
+      "demo",
+      "logs",
+      "wasm"
+    ],
+    "version": "0.1.0",
+    "execution_mode": "client-wasm",
+    "input_schema": "schemas/subA-input.json",
+    "output_schema": "schemas/subA-output.json",
+    "wasm_entry": "reverse_text"
+  },
+  {
+    "id": "sample-tool-k",
+    "slug": "subK",
+    "name": "示例工具11",
+    "description": "浏览器端文本倒序示例工具。",
+    "tags": [
+      "demo",
+      "docs",
+      "wasm"
+    ],
+    "version": "0.1.0",
+    "execution_mode": "client-wasm",
+    "input_schema": "schemas/subA-input.json",
+    "output_schema": "schemas/subA-output.json",
+    "wasm_entry": "reverse_text"
+  },
+  {
+    "id": "sample-tool-l",
+    "slug": "subL",
+    "name": "示例工具12",
+    "description": "浏览器端文本倒序示例工具。",
+    "tags": [
+      "demo",
+      "snippets",
+      "wasm"
+    ],
+    "version": "0.1.0",
+    "execution_mode": "client-wasm",
+    "input_schema": "schemas/subA-input.json",
+    "output_schema": "schemas/subA-output.json",
+    "wasm_entry": "reverse_text"
   }
 ];

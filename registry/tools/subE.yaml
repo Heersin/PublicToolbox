@@ -1,0 +1,13 @@
+id: sample-tool-e
+slug: subE
+name: 示例工具5
+description: 浏览器端文本倒序示例工具。
+tags:
+  - demo
+  - writing
+  - wasm
+version: 0.1.0
+execution_mode: client-wasm
+input_schema: schemas/subA-input.json
+output_schema: schemas/subA-output.json
+wasm_entry: reverse_text
