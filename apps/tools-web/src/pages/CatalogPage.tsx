@@ -105,7 +105,7 @@ export default function CatalogPage() {
   return (
     <main className="catalog-page">
       <header className="catalog-title-wrap">
-        <h1 className="catalog-title">书简工具集</h1>
+        <h1 className="catalog-title">百工辑录</h1>
         <div className="huiwen-underline" aria-hidden="true" />
       </header>
 

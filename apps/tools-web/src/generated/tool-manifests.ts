@@ -81,7 +81,7 @@ export const toolManifests: ToolManifest[] = [
   {
     "id": "sample-tool-e",
     "slug": "subE",
-    "name": "示例工具5",
+    "name": "未知",
     "description": "浏览器端文本倒序示例工具。",
     "tags": [
       "demo",
@@ -97,7 +97,7 @@ export const toolManifests: ToolManifest[] = [
   {
     "id": "sample-tool-f",
     "slug": "subF",
-    "name": "示例工具6",
+    "name": "未知",
     "description": "浏览器端文本倒序示例工具。",
     "tags": [
       "demo",
@@ -113,7 +113,7 @@ export const toolManifests: ToolManifest[] = [
   {
     "id": "sample-tool-g",
     "slug": "subG",
-    "name": "示例工具7",
+    "name": "未知",
     "description": "浏览器端文本倒序示例工具。",
     "tags": [
       "demo",
@@ -129,7 +129,7 @@ export const toolManifests: ToolManifest[] = [
   {
     "id": "sample-tool-h",
     "slug": "subH",
-    "name": "示例工具8",
+    "name": "未知",
     "description": "浏览器端文本倒序示例工具。",
     "tags": [
       "demo",
@@ -145,7 +145,7 @@ export const toolManifests: ToolManifest[] = [
   {
     "id": "sample-tool-i",
     "slug": "subI",
-    "name": "示例工具9",
+    "name": "未知",
     "description": "浏览器端文本倒序示例工具。",
     "tags": [
       "demo",
@@ -161,7 +161,7 @@ export const toolManifests: ToolManifest[] = [
   {
     "id": "sample-tool-j",
     "slug": "subJ",
-    "name": "示例工具10",
+    "name": "未知",
     "description": "浏览器端文本倒序示例工具。",
     "tags": [
       "demo",
@@ -177,7 +177,7 @@ export const toolManifests: ToolManifest[] = [
   {
     "id": "sample-tool-k",
     "slug": "subK",
-    "name": "示例工具11",
+    "name": "未知",
     "description": "浏览器端文本倒序示例工具。",
     "tags": [
       "demo",
@@ -193,8 +193,8 @@ export const toolManifests: ToolManifest[] = [
   {
     "id": "sample-tool-l",
     "slug": "subL",
-    "name": "示例工具12",
-    "description": "浏览器端文本倒序示例工具。",
+    "name": "未知",
+    "description": "待加入",
     "tags": [
       "demo",
       "snippets",
