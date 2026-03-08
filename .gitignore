@@ -6,7 +6,3 @@ node_modules/
 **/*.log
 **/target/
 .env
-
-
-submods/
-

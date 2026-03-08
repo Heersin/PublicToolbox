@@ -51,6 +51,8 @@ curl http://127.0.0.1:8080/api/readyz
 
 详见：[`docs/DEPLOY_DOKPLOY.md`](docs/DEPLOY_DOKPLOY.md)
 
+已内置一个外部静态工具入口：`/color/`（构建来源 `submods/colorcard`）。
+
 ## 自建服务器部署（备选）
 
 ```bash
@@ -72,6 +74,7 @@ crates/tool-wasm/          # wasm-bindgen 绑定层
 registry/tools/            # 工具清单（manifest）
 schemas/                   # manifest / input / output schema
 deploy/                    # nginx、docker 相关部署文件
+submods/                   # 外部 dist 子应用（示例：colorcard）
 scripts/                   # catalog 生成、manifest 校验、wasm 构建
 .github/workflows/         # CI pipeline
 docker-compose.prod.yml    # 生产 compose

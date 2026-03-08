@@ -37,6 +37,8 @@ struct ToolManifest {
     wasm_entry: Option<String>,
     #[serde(default)]
     api_endpoint: Option<String>,
+    #[serde(default)]
+    external_href: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -311,6 +313,7 @@ mod tests {
                 output_schema: "schemas/subB-output.json".to_string(),
                 wasm_entry: None,
                 api_endpoint: Some("/api/tools/v1/run/subb-server-sample".to_string()),
+                external_href: None,
             },
             ToolManifest {
                 id: "subc-hybrid-sample".to_string(),
@@ -324,6 +327,7 @@ mod tests {
                 output_schema: "schemas/subC-output.json".to_string(),
                 wasm_entry: Some("reverse_text".to_string()),
                 api_endpoint: Some("/api/tools/v1/run/subc-hybrid-sample".to_string()),
+                external_href: None,
             },
         ]
     }

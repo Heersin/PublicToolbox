@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "color static tool input",
+  "type": "object",
+  "description": "External static tool entry does not use structured input.",
+  "additionalProperties": true
+}

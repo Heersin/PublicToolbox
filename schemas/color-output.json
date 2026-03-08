@@ -1,0 +1,7 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "color static tool output",
+  "type": "object",
+  "description": "External static tool output is managed by its own app.",
+  "additionalProperties": true
+}

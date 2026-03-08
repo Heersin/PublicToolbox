@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 const registryDir = path.join(repoRoot, 'registry', 'tools');
 
-const reservedSlugs = new Set(['api', 'assets', 'static', 'favicon.ico']);
+const reservedSlugs = new Set(['api', 'assets', 'static', 'favicon.ico', 'colorcard']);
 
 function stableSortBySlug(a, b) {
   return a.slug.localeCompare(b.slug, 'en');
@@ -96,6 +96,7 @@ function toTypeScriptModule(manifests) {
     `  output_schema: string;\n` +
     `  wasm_entry?: string;\n` +
     `  api_endpoint?: string;\n` +
+    `  external_href?: string;\n` +
     `}\n\n` +
     `export const toolManifests: ToolManifest[] = ${JSON.stringify(manifests, null, 2)};\n`;
 }

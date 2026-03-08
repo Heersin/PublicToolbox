@@ -57,6 +57,9 @@
     },
     "api_endpoint": {
       "type": "string"
+    },
+    "external_href": {
+      "type": "string"
     }
   },
   "additionalProperties": false

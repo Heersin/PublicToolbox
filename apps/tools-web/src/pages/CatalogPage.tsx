@@ -140,16 +140,34 @@ export default function CatalogPage() {
         >
           <div className="card-rail">
             {tools.map((tool) => (
-              <Link key={tool.id} to={`/${tool.slug}`} className="tool-strip-card" aria-label={`进入 ${tool.name}`}>
-                <h2 className="strip-title">{tool.name}</h2>
-                <div className="strip-tags">
-                  {tool.tags.slice(0, 3).map((tag) => (
-                    <span key={`${tool.id}-${tag}`} className="tag">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </Link>
+              tool.external_href ? (
+                <a
+                  key={tool.id}
+                  href={tool.external_href}
+                  className="tool-strip-card"
+                  aria-label={`进入 ${tool.name}`}
+                >
+                  <h2 className="strip-title">{tool.name}</h2>
+                  <div className="strip-tags">
+                    {tool.tags.slice(0, 3).map((tag) => (
+                      <span key={`${tool.id}-${tag}`} className="tag">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </a>
+              ) : (
+                <Link key={tool.id} to={`/${tool.slug}`} className="tool-strip-card" aria-label={`进入 ${tool.name}`}>
+                  <h2 className="strip-title">{tool.name}</h2>
+                  <div className="strip-tags">
+                    {tool.tags.slice(0, 3).map((tag) => (
+                      <span key={`${tool.id}-${tag}`} className="tag">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </Link>
+              )
             ))}
           </div>
         </div>

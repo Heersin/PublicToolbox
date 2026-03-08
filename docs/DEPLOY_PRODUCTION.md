@@ -51,6 +51,7 @@ sudo nginx -s reload
 ```bash
 # 容器健康
 curl -fsS http://127.0.0.1:4200/
+curl -fsS http://127.0.0.1:4200/color/
 curl -fsS http://127.0.0.1:4200/api/readyz
 
 # 域名访问
@@ -131,4 +132,3 @@ docker compose -f docker-compose.prod.yml logs --tail 200 tools-api
 2. 填写证书路径
 3. 取消注释 `443` server 块
 4. `nginx -t && nginx -s reload`
-

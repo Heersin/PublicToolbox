@@ -13,9 +13,26 @@ export interface ToolManifest {
   output_schema: string;
   wasm_entry?: string;
   api_endpoint?: string;
+  external_href?: string;
 }
 
 export const toolManifests: ToolManifest[] = [
+  {
+    "id": "color-static-submod",
+    "slug": "color",
+    "name": "配色工坊",
+    "description": "外部静态工具（来自 submods/colorcard dist）。",
+    "tags": [
+      "color",
+      "static",
+      "submod"
+    ],
+    "version": "0.1.0",
+    "execution_mode": "client-wasm",
+    "input_schema": "schemas/color-input.json",
+    "output_schema": "schemas/color-output.json",
+    "external_href": "/color/"
+  },
   {
     "id": "suba-wasm-sample",
     "slug": "subA",

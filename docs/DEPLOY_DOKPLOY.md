@@ -26,6 +26,7 @@ sudo nginx -t && sudo nginx -s reload
 
 - `tools-web`：前端网关（容器内端口 `80`）
 - `tools-api`：后端 API（容器内端口 `8080`，仅内部访问）
+- `tools-web` 镜像会自动打包 `submods/colorcard` 并挂载为 `/color/` 工具入口
 
 ## 2. 配置域名与 HTTPS
 
@@ -69,8 +70,18 @@ sudo nginx -t && sudo nginx -s reload
 
 1. 打开 `https://tools.heersin.cloud/`
 2. 工具页可打开：`https://tools.heersin.cloud/subA`
-3. API 健康：`https://tools.heersin.cloud/api/readyz`
-4. API 示例执行：`POST /api/tools/v1/run/subb-server-sample`
+3. 外部静态工具可打开：`https://tools.heersin.cloud/color/`
+4. API 健康：`https://tools.heersin.cloud/api/readyz`
+5. API 示例执行：`POST /api/tools/v1/run/subb-server-sample`
+
+## 5.1 接入更多 submods 工具（Dokploy UI 无需改端口）
+
+当你新增一个 dist 工具（例如 `/toolX`）时：
+
+1. 把构建产物放入仓库（例如 `submods/toolX`）
+2. 更新 `deploy/docker/Dockerfile.web` 与 `deploy/docker/nginx.web.conf`（新增 `/toolX` 路由映射）
+3. 新增 manifest 并设置 `external_href: /toolX/`
+4. 在 Dokploy 点击 Redeploy（Compose 结构通常不需要改）
 
 ## 6. 故障排查
 
@@ -93,4 +104,3 @@ sudo nginx -t && sudo nginx -s reload
 
 - Dokploy 场景：优先使用本文档。
 - 自建 Nginx + 本机 4200 场景：使用 [`docs/DEPLOY_PRODUCTION.md`](./DEPLOY_PRODUCTION.md)。
-

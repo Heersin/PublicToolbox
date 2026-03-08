@@ -50,12 +50,13 @@ cargo test --workspace
 关键字段：
 
 - `id`: 全局唯一
-- `slug`: URL 路由名（不能与 `api/assets/static/favicon.ico` 冲突）
+- `slug`: URL 路由名（不能与 `api/assets/static/favicon.ico/colorcard` 冲突）
 - `name`, `description`, `tags`, `version`
 - `execution_mode`: `client-wasm | server-api | hybrid`
 - `input_schema`, `output_schema`
 - `wasm_entry`（前端 WASM 工具需要）
 - `api_endpoint`（服务端工具需要）
+- `external_href`（外部静态工具入口，可选）
 
 最小模板：
 
@@ -169,9 +170,45 @@ curl -X POST http://127.0.0.1:8080/api/tools/v1/run/sample-tool-x \
 - `?forceWasmFail=1` 时走 API fallback
 - 超长输入直接走 API guardrail 路径
 
-## 6. 模板片段
+## 6. 场景 D：集成已有 dist 到子路由（例如 `/color`）
 
-### 6.1 Manifest（server-api）模板
+适用场景：你已经有独立前端构建产物（例如 `submods/colorcard`），希望在工具站内通过卡片入口访问。
+
+### 6.1 最小步骤清单
+
+1. 将 dist 放入仓库（示例：`submods/colorcard`），确保未被 `.gitignore` 忽略。
+2. 新增 manifest，设置 `slug`（如 `color`）并加上 `external_href: /color/`。
+3. 在 `deploy/docker/Dockerfile.web` 复制该目录到 Nginx web 根（当前示例复制到 `/usr/share/nginx/html/color`）。
+4. 在 `deploy/docker/nginx.web.conf` 增加该路由（`/color` -> `/color/`，并将 `/color/*` 回退到 `/color/index.html`）。
+5. 重新部署 `tools-web`（Dokploy 里 Redeploy 即可）。
+
+### 6.2 Manifest 示例（外部静态工具）
+
+```yaml
+id: color-static-submod
+slug: color
+name: 配色工坊
+description: 外部静态工具（来自 submods/colorcard dist）。
+tags:
+  - color
+  - static
+version: 0.1.0
+execution_mode: client-wasm
+input_schema: schemas/color-input.json
+output_schema: schemas/color-output.json
+external_href: /color/
+```
+
+### 6.3 自测清单
+
+- 总览页出现新书简卡片
+- 点击卡片可进入 `/color/`
+- 刷新 `/color/` 不 404
+- `https://<domain>/api/readyz` 仍然可用（确认 API 反代未受影响）
+
+## 7. 模板片段
+
+### 7.1 Manifest（server-api）模板
 
 ```yaml
 id: sample-server-tool
@@ -188,7 +225,7 @@ output_schema: schemas/subServer-output.json
 api_endpoint: /api/tools/v1/run/sample-server-tool
 ```
 
-### 6.2 Input schema 模板
+### 7.2 Input schema 模板
 
 ```json
 {
@@ -206,7 +243,7 @@ api_endpoint: /api/tools/v1/run/sample-server-tool
 }
 ```
 
-### 6.3 Output schema 模板
+### 7.3 Output schema 模板
 
 ```json
 {
@@ -223,7 +260,7 @@ api_endpoint: /api/tools/v1/run/sample-server-tool
 }
 ```
 
-## 7. 提交流程建议
+## 8. 提交流程建议
 
 每次新增工具建议包含：
 
@@ -240,4 +277,3 @@ npm run generate:catalog
 npm run build:web
 cargo test --workspace
 ```
-

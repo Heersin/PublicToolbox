@@ -14,10 +14,12 @@
 - 路由：
   - `/`：工具总览页（书简卡片）
   - `/:toolSlug`：工具执行页
+  - `/color/`：外部静态子工具入口（由 Nginx 直接托管 dist）
 - 运行时：
   - `wasmRuntime`：执行 `client-wasm`
   - `serverRuntime`：执行 `server-api`
   - `ToolEntryPage`：实现 `hybrid` 回退逻辑
+  - `CatalogPage`：支持 `external_href` 卡片直达外部子工具
 
 ### 2.2 后端 `tools-api`
 
@@ -44,6 +46,7 @@
 - 生成产物：
   - 前端：`apps/tools-web/src/generated/tool-manifests.ts`
   - 后端：`services/tools-api/config/tool-manifests.json`
+- 可选字段：`external_href`（用于外部静态子工具入口，例如 `/color/`）
 
 ## 3. 模块关系图
 
