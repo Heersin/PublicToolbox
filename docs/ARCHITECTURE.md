@@ -134,15 +134,20 @@ flowchart TD
 
 ## 7. 部署拓扑
 
-- 宿主机 Nginx（对外入口）
+### 7.1 Dokploy（推荐）
+
+- Dokploy 网关负责域名与 TLS。
+- 使用 Compose：`docker-compose.dokploy.yml`。
+- 域名绑定：`tools.heersin.cloud -> tools-web:80`。
+- 服务间路由：`tools-web:/api/* -> tools-api:8080`。
+
+### 7.2 自建服务器（备选）
+
+- 宿主机 Nginx 作为对外入口：
   - `tools.heersin.cloud -> 127.0.0.1:4200`
   - 配置文件：`deploy/nginx/tools.heersin.cloud.conf`
-- Docker Compose（应用层）
-  - `tools-web`：容器内 Nginx 提供静态站点并反代 `/api/*`
-  - `tools-api`：Rust Axum API
-  - 组合文件：`docker-compose.prod.yml`
-- 容器内路由
-  - `tools-web:/api/* -> tools-api:8080`
+- 使用 Compose：`docker-compose.prod.yml`
+- 容器内路由仍为：`tools-web:/api/* -> tools-api:8080`
 
 ## 8. 关键扩展点
 

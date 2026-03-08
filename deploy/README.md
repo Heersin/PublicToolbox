@@ -1,26 +1,23 @@
 # Deploy Guide
 
-推荐主线：Docker Compose（前端 + API 统一打包）+ Host Nginx 反代。
+推荐主线：Dokploy（域名与容器由平台托管）。
 
 完整步骤请优先阅读：
 
-- [`../docs/DEPLOY_PRODUCTION.md`](../docs/DEPLOY_PRODUCTION.md)
+- Dokploy 场景：[`../docs/DEPLOY_DOKPLOY.md`](../docs/DEPLOY_DOKPLOY.md)
+- 自建 Nginx 场景：[`../docs/DEPLOY_PRODUCTION.md`](../docs/DEPLOY_PRODUCTION.md)
 
-## Quick Start
+## Quick Start (Dokploy)
 
-```bash
-# 1) 启动容器（构建）
-docker compose -f docker-compose.prod.yml up -d --build
-
-# 2) 配置主机 Nginx
-sudo cp deploy/nginx/tools.heersin.cloud.conf /etc/nginx/conf.d/tools.heersin.cloud.conf
-sudo nginx -t
-sudo nginx -s reload
-```
+1. 在 Dokploy 创建 Docker Compose 应用。
+2. Compose 文件：`docker-compose.dokploy.yml`。
+3. Domain 绑定：`tools.heersin.cloud -> tools-web:80`。
+4. 触发 Deploy。
 
 ## 关键文件
 
 - Web Dockerfile: `deploy/docker/Dockerfile.web`
 - Web Nginx（容器内）: `deploy/docker/nginx.web.conf`
+- Dokploy Compose: `docker-compose.dokploy.yml`
 - Compose: `docker-compose.prod.yml`
 - Host Nginx（对外域名）: `deploy/nginx/tools.heersin.cloud.conf`

@@ -1,6 +1,8 @@
-# 生产部署指南（Docker Compose + Host Nginx）
+# 生产部署指南（自建服务器：Docker Compose + Host Nginx）
 
-本指南采用“容器化主线”，目标：
+Dokploy 部署请优先参考 [`DEPLOY_DOKPLOY.md`](./DEPLOY_DOKPLOY.md)。
+
+本指南采用“自建服务器容器化主线”，目标：
 
 - 前端与 API 统一 Docker 打包与启动
 - 站点内部监听 `127.0.0.1:4200`

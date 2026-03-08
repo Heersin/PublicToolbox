@@ -1,11 +1,11 @@
 # tools-subsite
 
-`tools-subsite` 是一个独立部署在 `tools.heersin.cloud` 的工具子站项目，和主博客（如 Hugo）解耦。
+`tools-subsite` 是一个独立部署在 `tools.heersin.cloud`（或其他子域名）的工具子站项目，和主博客（如 Hugo）解耦。
 
 - 前端：`Vite + React + React Router`
 - 计算：`Rust/WASM`（浏览器优先）
 - 后端：`Rust + Axum`（API 兜底）
-- 部署：`Docker Compose`（web + api）+ `Host Nginx`
+- 部署：`Dokploy`（推荐）或 `Docker Compose + Host Nginx`
 
 ## 项目目标
 
@@ -42,7 +42,16 @@ API 健康检查：
 curl http://127.0.0.1:8080/api/readyz
 ```
 
-## Docker 生产启动（简版）
+## Dokploy 部署（推荐）
+
+1. 在 Dokploy 新建 `Docker Compose` 应用。
+2. Compose 文件选择：`docker-compose.dokploy.yml`。
+3. 域名绑定到 `tools-web:80`，配置 `tools.heersin.cloud`。
+4. 触发部署。
+
+详见：[`docs/DEPLOY_DOKPLOY.md`](docs/DEPLOY_DOKPLOY.md)
+
+## 自建服务器部署（备选）
 
 ```bash
 # 构建并启动容器，web 会监听 127.0.0.1:4200
@@ -94,7 +103,8 @@ cargo test --workspace
 
 - 架构文档：[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 - 开发文档（新增工具指南）：[`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md)
-- 生产部署文档：[`docs/DEPLOY_PRODUCTION.md`](docs/DEPLOY_PRODUCTION.md)
+- Dokploy 部署文档：[`docs/DEPLOY_DOKPLOY.md`](docs/DEPLOY_DOKPLOY.md)
+- 生产部署文档（自建 Nginx 方案）：[`docs/DEPLOY_PRODUCTION.md`](docs/DEPLOY_PRODUCTION.md)
 - Pipeline 文档：[`docs/PIPELINE.md`](docs/PIPELINE.md)
 - 部署入口：[`deploy/README.md`](deploy/README.md)
 
