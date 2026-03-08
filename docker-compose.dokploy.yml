@@ -7,6 +7,8 @@ services:
     restart: unless-stopped
     expose:
       - "8080"
+    networks:
+      - dokploy-network
 
   tools-web:
     image: ${TOOLS_WEB_IMAGE:-tools-web:local}
@@ -18,3 +20,9 @@ services:
       - tools-api
     expose:
       - "80"
+    networks:
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true
