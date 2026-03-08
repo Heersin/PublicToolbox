@@ -19,7 +19,9 @@ else
 fi
 
 if command -v rustup >/dev/null 2>&1; then
-  rustup target add wasm32-unknown-unknown
+  if ! rustup target list --installed | grep -q '^wasm32-unknown-unknown$'; then
+    rustup target add wasm32-unknown-unknown
+  fi
 fi
 
 cd "${REPO_ROOT}"
