@@ -1,0 +1,28 @@
+services:
+  tools-api:
+    image: ${TOOLS_API_IMAGE:-tools-api:local}
+    build:
+      context: .
+      dockerfile: services/tools-api/Dockerfile
+    restart: unless-stopped
+    expose:
+      - "8080"
+    networks:
+      - tools-net
+
+  tools-web:
+    image: ${TOOLS_WEB_IMAGE:-tools-web:local}
+    build:
+      context: .
+      dockerfile: deploy/docker/Dockerfile.web
+    restart: unless-stopped
+    depends_on:
+      - tools-api
+    ports:
+      - "127.0.0.1:4200:80"
+    networks:
+      - tools-net
+
+networks:
+  tools-net:
+    driver: bridge

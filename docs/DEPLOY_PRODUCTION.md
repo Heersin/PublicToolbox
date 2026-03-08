@@ -1,169 +1,132 @@
-# 生产部署指南（Nginx Native + tools-api Docker）
+# 生产部署指南（Docker Compose + Host Nginx）
 
-本文档面向生产环境运维，采用当前项目既有发布主线：
+本指南采用“容器化主线”，目标：
 
-- `deploy/scripts/release.sh`
-- `deploy/scripts/rollback.sh`
+- 前端与 API 统一 Docker 打包与启动
+- 站点内部监听 `127.0.0.1:4200`
+- 主机 Nginx 以 `tools.heersin.cloud` 对外提供访问
 
 ## 1. 前置条件
 
 服务器需具备：
 
 1. `nginx`
-2. `docker`
-3. `systemd`
-4. 域名（示例：`tools.domain.xxx`）已解析到服务器 IP
+2. `docker` + `docker compose` 插件
+3. 域名 `tools.heersin.cloud` 已解析到服务器
 
-默认路径（脚本依赖）：
+## 2. 首次部署（推荐）
 
-- 前端版本目录：`/var/www/tools/releases`
-- 前端当前版本软链：`/var/www/tools/current`
-- API 环境文件：`/etc/tools-api/tools-api.env`
-
-## 2. 首次安装流程
-
-### 2.1 配置 Nginx 站点
+### 2.1 拉取项目并进入目录
 
 ```bash
-sudo cp deploy/nginx/tools.domain.xxx.conf /etc/nginx/conf.d/tools.domain.xxx.conf
+git clone <your-repo-url> /opt/tools-subsite
+cd /opt/tools-subsite
+```
+
+### 2.2 启动容器（构建 + 后台运行）
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+说明：
+- `tools-web` 容器会在宿主机暴露 `127.0.0.1:4200`
+- `tools-api` 只在 Docker 网络内暴露 `8080`
+- `tools-web` 内部 Nginx 会把 `/api/*` 转发到 `tools-api:8080`
+
+### 2.3 配置主机 Nginx
+
+```bash
+sudo cp deploy/nginx/tools.heersin.cloud.conf /etc/nginx/conf.d/tools.heersin.cloud.conf
 sudo nginx -t
 sudo nginx -s reload
 ```
 
-说明：
-- 该配置会把 `/api/*` 代理到 `127.0.0.1:18080`。
-- `root` 指向 `/var/www/tools/current`。
+该配置会把外部域名流量代理到本机 `127.0.0.1:4200`。
 
-### 2.2 安装 tools-api systemd 服务
+### 2.4 验证
 
 ```bash
-sudo cp deploy/systemd/tools-api.service /etc/systemd/system/tools-api.service
-sudo mkdir -p /etc/tools-api
-sudo cp deploy/env/tools-api.env.example /etc/tools-api/tools-api.env
+# 容器健康
+curl -fsS http://127.0.0.1:4200/
+curl -fsS http://127.0.0.1:4200/api/readyz
+
+# 域名访问
+curl -fsS -H 'Host: tools.heersin.cloud' http://127.0.0.1/
 ```
 
-编辑 `/etc/tools-api/tools-api.env`，设置你的镜像地址：
+## 3. 后续发布（简化版）
 
-```env
-TOOLS_API_IMAGE=ghcr.io/<org>/tools-api:<tag>
-RUST_LOG=info
-```
-
-加载并启动服务：
+更新代码后执行：
 
 ```bash
-sudo systemctl daemon-reload
-sudo systemctl enable --now tools-api.service
-sudo systemctl status tools-api.service --no-pager
+cd /opt/tools-subsite
+git pull
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-### 2.3 健康检查
+若你使用镜像仓库发布，可改用：
 
 ```bash
-curl -fsS http://127.0.0.1:18080/api/readyz
-curl -fsS -H 'Host: tools.domain.xxx' http://127.0.0.1/
+TOOLS_WEB_IMAGE=ghcr.io/<org>/tools-web:<tag> \
+TOOLS_API_IMAGE=ghcr.io/<org>/tools-api:<tag> \
+docker compose -f docker-compose.prod.yml pull
+
+TOOLS_WEB_IMAGE=ghcr.io/<org>/tools-web:<tag> \
+TOOLS_API_IMAGE=ghcr.io/<org>/tools-api:<tag> \
+docker compose -f docker-compose.prod.yml up -d
 ```
 
-## 3. 日常发布流程
+## 4. 回滚
 
-### 3.1 在 CI 或本地构建前端产物
+### 4.1 Git 回滚版本（最简单）
 
 ```bash
-npm ci
-npm run build:web
+cd /opt/tools-subsite
+git checkout <old-commit-or-tag>
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-前端构建产物目录：`apps/tools-web/dist`
-
-将该目录上传到服务器某个临时路径（示例）：`/tmp/tools-dist`
-
-### 3.2 构建并推送 API 镜像
+### 4.2 镜像回滚（使用镜像标签）
 
 ```bash
-docker build -f services/tools-api/Dockerfile -t ghcr.io/<org>/tools-api:<tag> .
-docker push ghcr.io/<org>/tools-api:<tag>
+TOOLS_WEB_IMAGE=ghcr.io/<org>/tools-web:<old-tag> \
+TOOLS_API_IMAGE=ghcr.io/<org>/tools-api:<old-tag> \
+docker compose -f docker-compose.prod.yml up -d
 ```
 
-### 3.3 执行发布脚本
+## 5. 运维排查
+
+### 5.1 查看容器状态与日志
 
 ```bash
-sudo deploy/scripts/release.sh \
-  --release-id 20260306_01 \
-  --dist-dir /tmp/tools-dist \
-  --api-image ghcr.io/<org>/tools-api:<tag> \
-  --domain tools.domain.xxx
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs -f tools-web
+docker compose -f docker-compose.prod.yml logs -f tools-api
 ```
 
-脚本做的事：
-
-1. 复制前端产物到 `/var/www/tools/releases/<release-id>`
-2. 更新软链 `/var/www/tools/current`
-3. 更新 `/etc/tools-api/tools-api.env` 的镜像版本
-4. 重启 `tools-api.service`
-5. `nginx -t && nginx -s reload`
-6. 执行 API 与站点健康检查；失败则自动回滚
-
-## 4. 回滚流程
-
-```bash
-sudo deploy/scripts/rollback.sh \
-  --release-id 20260305_02 \
-  --api-image ghcr.io/<org>/tools-api:<old-tag>
-```
-
-回滚后建议检查：
-
-```bash
-curl -fsS http://127.0.0.1:18080/api/readyz
-curl -fsS -H 'Host: tools.domain.xxx' http://127.0.0.1/
-```
-
-## 5. 运维检查清单
-
-每次发布后建议至少确认：
-
-1. `systemctl status tools-api.service` 正常
-2. `curl /api/readyz` 返回 `ready`
-3. 首页可访问：`/`
-4. 至少 1 个工具页可访问：`/subA`
-5. 至少 1 个 API 工具可执行：`/api/tools/v1/run/<tool_id>`
-
-## 6. 故障排查
-
-### 6.1 镜像拉取失败
-
-现象：`tools-api.service` 启动失败。
-
-排查：
-
-```bash
-sudo journalctl -u tools-api.service -n 200 --no-pager
-sudo docker pull ghcr.io/<org>/tools-api:<tag>
-```
-
-### 6.2 Nginx 反代失败（/api 502/504）
-
-排查：
+### 5.2 主机 Nginx 排查
 
 ```bash
 sudo nginx -t
-curl -v http://127.0.0.1:18080/api/readyz
-sudo journalctl -u tools-api.service -n 200 --no-pager
+sudo tail -n 200 /var/log/nginx/error.log
 ```
 
-### 6.3 manifest 读取失败
+### 5.3 API 不可用
 
-现象：API 启动后立即退出。
+```bash
+curl -v http://127.0.0.1:4200/api/readyz
+docker compose -f docker-compose.prod.yml logs --tail 200 tools-api
+```
 
-排查：
+## 6. TLS（可选）
 
-- 确认镜像里包含 `/app/registry/tools`
-- 确认 `TOOLS_REGISTRY_DIR`（默认 `/app/registry/tools`）
-- 查看服务日志关键字：`failed building application router`
+`deploy/nginx/tools.heersin.cloud.conf` 已附带可选 `443` 模板注释。
 
-## 7. 安全与权限建议
+启用步骤：
 
-1. `tools-api` 仅监听 `127.0.0.1:18080`，不对公网直接暴露。
-2. 站点对外统一走 Nginx。
-3. 发布脚本建议仅由具备 sudo 权限的受控账号执行。
+1. 签发证书（如 certbot）
+2. 填写证书路径
+3. 取消注释 `443` server 块
+4. `nginx -t && nginx -s reload`
 

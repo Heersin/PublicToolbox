@@ -1,29 +1,26 @@
 # Deploy Guide
 
-本文档保留“执行命令入口”，完整版生产部署说明请优先阅读：
+推荐主线：Docker Compose（前端 + API 统一打包）+ Host Nginx 反代。
+
+完整步骤请优先阅读：
 
 - [`../docs/DEPLOY_PRODUCTION.md`](../docs/DEPLOY_PRODUCTION.md)
 
-## 1) Nginx (native)
-- Copy `deploy/nginx/tools.domain.xxx.conf` to `/etc/nginx/conf.d/tools.domain.xxx.conf`.
-- Verify and reload:
-  - `nginx -t`
-  - `nginx -s reload`
+## Quick Start
 
-## 2) tools-api (Docker + systemd)
-- Build and push image:
-  - `docker build -f services/tools-api/Dockerfile -t ghcr.io/<org>/tools-api:<tag> .`
-  - `docker push ghcr.io/<org>/tools-api:<tag>`
-- Install service:
-  - `cp deploy/systemd/tools-api.service /etc/systemd/system/tools-api.service`
-  - `mkdir -p /etc/tools-api`
-  - `cp deploy/env/tools-api.env.example /etc/tools-api/tools-api.env`
-  - edit image tag in `/etc/tools-api/tools-api.env`
-  - `systemctl daemon-reload`
-  - `systemctl enable --now tools-api.service`
+```bash
+# 1) 启动容器（构建）
+docker compose -f docker-compose.prod.yml up -d --build
 
-## 3) One-click release
-- `sudo deploy/scripts/release.sh --release-id <release-id> --dist-dir <frontend-dist-path> --api-image <image-tag> --domain tools.domain.xxx`
+# 2) 配置主机 Nginx
+sudo cp deploy/nginx/tools.heersin.cloud.conf /etc/nginx/conf.d/tools.heersin.cloud.conf
+sudo nginx -t
+sudo nginx -s reload
+```
 
-## 4) One-click rollback
-- `sudo deploy/scripts/rollback.sh --release-id <release-id> --api-image <image-tag>`
+## 关键文件
+
+- Web Dockerfile: `deploy/docker/Dockerfile.web`
+- Web Nginx（容器内）: `deploy/docker/nginx.web.conf`
+- Compose: `docker-compose.prod.yml`
+- Host Nginx（对外域名）: `deploy/nginx/tools.heersin.cloud.conf`

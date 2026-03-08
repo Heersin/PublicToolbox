@@ -2,7 +2,7 @@
 
 ## 1. 系统边界
 
-`tools-subsite` 是独立子站，部署在 `tools.domain.xxx`，与主博客系统（如 Hugo）完全解耦。
+`tools-subsite` 是独立子站，部署在 `tools.heersin.cloud`（可替换），与主博客系统（如 Hugo）完全解耦。
 
 - 主博客：独立站点与仓库，不在本项目内。
 - 工具子站：仅负责工具目录、工具页面、工具执行。
@@ -49,9 +49,10 @@
 
 ```mermaid
 flowchart LR
-  U[User Browser] --> N[Nginx]
-  N -->|/| W[tools-web static]
-  N -->|/api/*| A[tools-api]
+  U[User Browser] --> H[Host Nginx]
+  H -->|tools.heersin.cloud| G[tools-web gateway on 127.0.0.1:4200]
+  G -->|/api/*| A[tools-api container]
+  G -->|/| W[tools-web static]
 
   W --> G[generated tool-manifests.ts]
   A --> R[registry/tools/*.yaml]
@@ -133,15 +134,15 @@ flowchart TD
 
 ## 7. 部署拓扑
 
-- Nginx：服务器 native 部署
-  - `root /var/www/tools/current`
-  - `/api/* -> 127.0.0.1:18080`
-- tools-api：Docker 运行，由 systemd 托管
-  - 服务文件：`deploy/systemd/tools-api.service`
-  - 环境文件：`/etc/tools-api/tools-api.env`
-- 发布回滚：
-  - 发布脚本：`deploy/scripts/release.sh`
-  - 回滚脚本：`deploy/scripts/rollback.sh`
+- 宿主机 Nginx（对外入口）
+  - `tools.heersin.cloud -> 127.0.0.1:4200`
+  - 配置文件：`deploy/nginx/tools.heersin.cloud.conf`
+- Docker Compose（应用层）
+  - `tools-web`：容器内 Nginx 提供静态站点并反代 `/api/*`
+  - `tools-api`：Rust Axum API
+  - 组合文件：`docker-compose.prod.yml`
+- 容器内路由
+  - `tools-web:/api/* -> tools-api:8080`
 
 ## 8. 关键扩展点
 
@@ -151,4 +152,3 @@ flowchart TD
   - `apps/tools-web/src/pages/ToolEntryPage.tsx`
 - 新增服务端执行逻辑：
   - `services/tools-api/src/lib.rs` 中 `match tool.id.as_str()` 分支
-
