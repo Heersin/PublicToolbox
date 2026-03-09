@@ -1,13 +1,13 @@
 id: sample-tool-d
-slug: subD
-name: 示例工具4
-description: 浏览器端文本倒序示例工具。
+slug: clipboard
+name: 在线剪贴板
+description: 本地保存 + 一键复制 + 链接分享的轻量剪贴板。
 tags:
-  - demo
-  - text
-  - wasm
+  - clipboard
+  - share
+  - notes
 version: 0.1.0
 execution_mode: client-wasm
-input_schema: schemas/subA-input.json
-output_schema: schemas/subA-output.json
+input_schema: schemas/clipboard-input.json
+output_schema: schemas/clipboard-output.json
 wasm_entry: reverse_text

@@ -1,5 +1,21 @@
 [
   {
+    "id": "sample-tool-d",
+    "slug": "clipboard",
+    "name": "在线剪贴板",
+    "description": "本地保存 + 一键复制 + 链接分享的轻量剪贴板。",
+    "tags": [
+      "clipboard",
+      "share",
+      "notes"
+    ],
+    "version": "0.1.0",
+    "execution_mode": "client-wasm",
+    "input_schema": "schemas/clipboard-input.json",
+    "output_schema": "schemas/clipboard-output.json",
+    "wasm_entry": "reverse_text"
+  },
+  {
     "id": "color-static-submod",
     "slug": "color",
     "name": "配色工坊",
@@ -60,22 +76,6 @@
     "output_schema": "schemas/subC-output.json",
     "wasm_entry": "reverse_text",
     "api_endpoint": "/api/tools/v1/run/subc-hybrid-sample"
-  },
-  {
-    "id": "sample-tool-d",
-    "slug": "subD",
-    "name": "示例工具4",
-    "description": "浏览器端文本倒序示例工具。",
-    "tags": [
-      "demo",
-      "text",
-      "wasm"
-    ],
-    "version": "0.1.0",
-    "execution_mode": "client-wasm",
-    "input_schema": "schemas/subA-input.json",
-    "output_schema": "schemas/subA-output.json",
-    "wasm_entry": "reverse_text"
   },
   {
     "id": "sample-tool-e",
