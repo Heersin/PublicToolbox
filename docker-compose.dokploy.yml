@@ -5,8 +5,12 @@ services:
       context: .
       dockerfile: services/tools-api/Dockerfile
     restart: unless-stopped
+    environment:
+      CLIPBOARD_DB_PATH: /app/data/clipboard.db
     expose:
       - "8080"
+    volumes:
+      - tools-api-data:/app/data
     networks:
       - dokploy-network
 
@@ -26,3 +30,6 @@ services:
 networks:
   dokploy-network:
     external: true
+
+volumes:
+  tools-api-data:

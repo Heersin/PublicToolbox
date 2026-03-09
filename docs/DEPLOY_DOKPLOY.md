@@ -64,6 +64,17 @@ sudo nginx -t && sudo nginx -s reload
 
 默认可不填，直接使用 Compose 内 build。
 
+### 4.1 云帖（SQLite）持久化说明
+
+`docker-compose.dokploy.yml` 已默认配置：
+
+- `CLIPBOARD_DB_PATH=/app/data/clipboard.db`
+- `tools-api-data:/app/data` 持久卷
+
+这意味着云帖数据会写入 Dokploy 持久卷，不会因为普通重启丢失。
+
+如需改路径，可在 Dokploy 覆盖 `CLIPBOARD_DB_PATH`，并确保对应目录仍挂载到持久卷。
+
 ## 5. 验证清单
 
 部署完成后检查：

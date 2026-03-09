@@ -2,12 +2,12 @@
   {
     "id": "sample-tool-d",
     "slug": "clipboard",
-    "name": "在线剪贴板",
-    "description": "本地保存 + 一键复制 + 链接分享的轻量剪贴板。",
+    "name": "云帖",
+    "description": "通过短语分区与可选口令保护内容的在线剪贴板。",
     "tags": [
       "clipboard",
-      "share",
-      "notes"
+      "phrase",
+      "passcode"
     ],
     "version": "0.1.0",
     "execution_mode": "client-wasm",
