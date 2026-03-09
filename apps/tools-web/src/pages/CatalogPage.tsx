@@ -3,12 +3,21 @@ import { Link } from 'react-router-dom';
 import { getAllTools } from '../lib/toolCatalog';
 
 const tools = getAllTools();
+const DRAG_ACTIVATION_PX = 10;
+const CLICK_SUPPRESS_MS = 220;
 
 export default function CatalogPage() {
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const panDirectionRef = useRef<0 | -1 | 1>(0);
-  const dragStateRef = useRef({ active: false, startX: 0, startScrollLeft: 0, moved: false });
+  const dragStateRef = useRef({
+    active: false,
+    startX: 0,
+    startY: 0,
+    startScrollLeft: 0,
+    moved: false,
+  });
+  const suppressClickUntilRef = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
 
   useEffect(() => {
@@ -58,10 +67,11 @@ export default function CatalogPage() {
     dragStateRef.current = {
       active: true,
       startX: event.clientX,
+      startY: event.clientY,
       startScrollLeft: viewport.scrollLeft,
       moved: false,
     };
-    setIsDragging(true);
+    setIsDragging(false);
     stopEdgePan();
     viewport.setPointerCapture(event.pointerId);
   }
@@ -74,10 +84,18 @@ export default function CatalogPage() {
     }
 
     const deltaX = event.clientX - state.startX;
-    if (Math.abs(deltaX) > 4) {
+    const deltaY = event.clientY - state.startY;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+    if (!state.moved) {
+      if (absX < DRAG_ACTIVATION_PX || absX <= absY) {
+        return;
+      }
       state.moved = true;
+      setIsDragging(true);
     }
 
+    event.preventDefault();
     viewport.scrollLeft = state.startScrollLeft - deltaX;
   }
 
@@ -87,18 +105,22 @@ export default function CatalogPage() {
       return;
     }
 
+    const wasMoved = dragStateRef.current.moved;
     dragStateRef.current.active = false;
+    dragStateRef.current.moved = false;
     setIsDragging(false);
+    if (wasMoved) {
+      suppressClickUntilRef.current = Date.now() + CLICK_SUPPRESS_MS;
+    }
     if (viewport.hasPointerCapture(event.pointerId)) {
       viewport.releasePointerCapture(event.pointerId);
     }
   }
 
   function handleClickCapture(event: MouseEvent<HTMLDivElement>) {
-    if (dragStateRef.current.moved) {
+    if (Date.now() < suppressClickUntilRef.current) {
       event.preventDefault();
       event.stopPropagation();
-      dragStateRef.current.moved = false;
     }
   }
 

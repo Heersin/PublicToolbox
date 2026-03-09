@@ -28,8 +28,8 @@ a {
 }
 
 .catalog-page {
-  --window-size: 7;
-  --card-gap: 1.2rem;
+  --window-size: 12;
+  --card-gap: 0.54rem;
   --edge-zone-width: 56px;
   width: min(1580px, 100% - 2rem);
   margin: 0 auto;
@@ -127,8 +127,8 @@ a {
 
 .tool-strip-card {
   flex: 0 0 calc((100% - (var(--window-size) - 1) * var(--card-gap)) / var(--window-size));
-  min-width: 150px;
-  height: 600px;
+  min-width: 88px;
+  height: 560px;
   border: 1px solid #bdbdbd;
   background: var(--paper-panel);
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.2);
@@ -136,7 +136,7 @@ a {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding: 0.42rem 0.62rem 0.85rem;
+  padding: 0.36rem 0.52rem 0.72rem;
   transition: transform 140ms ease, box-shadow 140ms ease;
   text-decoration: none;
 }
@@ -153,14 +153,14 @@ a {
 
 .strip-title {
   margin: 0;
-  font-size: 3.45rem;
+  font-size: 2.8rem;
   letter-spacing: 0.04em;
   line-height: 1;
   writing-mode: vertical-rl;
   text-orientation: mixed;
   position: absolute;
-  top: 2rem;
-  right: 0.5rem;
+  top: 1.75rem;
+  right: 0.4rem;
   text-align: right;
   padding-right: 0;
 }
@@ -175,7 +175,7 @@ a {
 
 .tag {
   border-bottom: 1px solid var(--line-soft);
-  font-size: 0.78rem;
+  font-size: 0.7rem;
   color: #1e1e1e;
 }
 
@@ -293,37 +293,22 @@ a {
 
 @media (max-width: 1450px) {
   .catalog-page {
-    --window-size: 6;
+    --window-size: 10;
+    --card-gap: 0.58rem;
+    --edge-zone-width: 48px;
   }
 }
 
 @media (max-width: 1180px) {
   .catalog-page {
-    --window-size: 5;
-    --card-gap: 1rem;
-    --edge-zone-width: 44px;
+    --window-size: 8;
+    --card-gap: 0.66rem;
+    --edge-zone-width: 40px;
     width: min(1580px, 100% - 1rem);
   }
 
   .tool-strip-card {
-    height: 560px;
-  }
-
-  .strip-title {
-    font-size: 3rem;
-  }
-}
-
-@media (max-width: 920px) {
-  .catalog-page {
-    --window-size: 4;
-    --edge-zone-width: 36px;
-  }
-
-  .tool-strip-card {
-    min-width: 126px;
     height: 500px;
-    padding-top: 0.4rem;
   }
 
   .strip-title {
@@ -331,10 +316,28 @@ a {
   }
 }
 
+@media (max-width: 920px) {
+  .catalog-page {
+    --window-size: 6;
+    --card-gap: 0.68rem;
+    --edge-zone-width: 32px;
+  }
+
+  .tool-strip-card {
+    min-width: 92px;
+    height: 460px;
+    padding-top: 0.4rem;
+  }
+
+  .strip-title {
+    font-size: 2.1rem;
+  }
+}
+
 @media (max-width: 720px) {
   .catalog-page {
-    --window-size: 3;
-    --card-gap: 0.82rem;
+    --window-size: 4;
+    --card-gap: 0.62rem;
     --edge-zone-width: 24px;
     padding-top: 2.2rem;
   }
