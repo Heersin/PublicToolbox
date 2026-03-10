@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type MouseEvent, type PointerEvent, type WheelEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent, type PointerEvent, type WheelEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllTools } from '../lib/toolCatalog';
 
@@ -20,21 +20,6 @@ export default function CatalogPage() {
   });
   const suppressClickUntilRef = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
-
-  function detachDragListeners() {
-    window.removeEventListener('pointermove', handleWindowPointerMove);
-    window.removeEventListener('pointerup', handleWindowPointerEnd);
-    window.removeEventListener('pointercancel', handleWindowPointerEnd);
-  }
-
-  useEffect(() => {
-    return () => {
-      if (animationFrameRef.current !== null) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-      detachDragListeners();
-    };
-  }, []);
 
   function panStep() {
     const viewport = viewportRef.current;
@@ -62,6 +47,57 @@ export default function CatalogPage() {
     }
   }
 
+  const handleWindowPointerMove = useCallback((event: globalThis.PointerEvent) => {
+    const viewport = viewportRef.current;
+    const state = dragStateRef.current;
+    if (!viewport || !state.active || state.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const deltaX = event.clientX - state.startX;
+    const deltaY = event.clientY - state.startY;
+    const absX = Math.abs(deltaX);
+    const absY = Math.abs(deltaY);
+    if (!state.moved) {
+      if (absX < DRAG_ACTIVATION_PX || absX <= absY) {
+        return;
+      }
+      state.moved = true;
+      setIsDragging(true);
+    }
+
+    event.preventDefault();
+    viewport.scrollLeft = state.startScrollLeft - deltaX;
+  }, []);
+
+  const handleWindowPointerEnd = useCallback((event: globalThis.PointerEvent) => {
+    const state = dragStateRef.current;
+    if (!state.active || state.pointerId !== event.pointerId) {
+      return;
+    }
+
+    const wasMoved = state.moved;
+    dragStateRef.current.active = false;
+    dragStateRef.current.moved = false;
+    dragStateRef.current.pointerId = null;
+    setIsDragging(false);
+    if (wasMoved) {
+      suppressClickUntilRef.current = Date.now() + CLICK_SUPPRESS_MS;
+    }
+    window.removeEventListener('pointermove', handleWindowPointerMove);
+  }, [handleWindowPointerMove]);
+
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      window.removeEventListener('pointermove', handleWindowPointerMove);
+      window.removeEventListener('pointerup', handleWindowPointerEnd);
+      window.removeEventListener('pointercancel', handleWindowPointerEnd);
+    };
+  }, [handleWindowPointerMove, handleWindowPointerEnd]);
+
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
     if (event.pointerType !== 'mouse' || event.button !== 0) {
       return;
@@ -83,48 +119,8 @@ export default function CatalogPage() {
     setIsDragging(false);
     stopEdgePan();
     window.addEventListener('pointermove', handleWindowPointerMove, { passive: false });
-    window.addEventListener('pointerup', handleWindowPointerEnd);
-    window.addEventListener('pointercancel', handleWindowPointerEnd);
-  }
-
-  function handleWindowPointerMove(event: globalThis.PointerEvent) {
-    const viewport = viewportRef.current;
-    const state = dragStateRef.current;
-    if (!viewport || !state.active || state.pointerId !== event.pointerId) {
-      return;
-    }
-
-    const deltaX = event.clientX - state.startX;
-    const deltaY = event.clientY - state.startY;
-    const absX = Math.abs(deltaX);
-    const absY = Math.abs(deltaY);
-    if (!state.moved) {
-      if (absX < DRAG_ACTIVATION_PX || absX <= absY) {
-        return;
-      }
-      state.moved = true;
-      setIsDragging(true);
-    }
-
-    event.preventDefault();
-    viewport.scrollLeft = state.startScrollLeft - deltaX;
-  }
-
-  function handleWindowPointerEnd(event: globalThis.PointerEvent) {
-    const state = dragStateRef.current;
-    if (!state.active || state.pointerId !== event.pointerId) {
-      return;
-    }
-
-    const wasMoved = state.moved;
-    dragStateRef.current.active = false;
-    dragStateRef.current.moved = false;
-    dragStateRef.current.pointerId = null;
-    setIsDragging(false);
-    if (wasMoved) {
-      suppressClickUntilRef.current = Date.now() + CLICK_SUPPRESS_MS;
-    }
-    detachDragListeners();
+    window.addEventListener('pointerup', handleWindowPointerEnd, { once: true });
+    window.addEventListener('pointercancel', handleWindowPointerEnd, { once: true });
   }
 
   function handleWheel(event: WheelEvent<HTMLDivElement>) {

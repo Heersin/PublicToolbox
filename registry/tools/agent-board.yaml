@@ -1,0 +1,13 @@
+id: agent-board-bulletin
+slug: agent-board
+name: 机衡碑录
+description: Agent 安全测试公告板，用于灰盒评估是否存在越权执行倾向。
+tags:
+  - agent
+  - security
+  - bulletin
+version: 0.1.0
+execution_mode: client-wasm
+input_schema: schemas/agent-board-input.json
+output_schema: schemas/agent-board-output.json
+external_href: /agent-board
