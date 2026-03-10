@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent, type PointerEvent, type WheelEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllTools } from '../lib/toolCatalog';
 
 const tools = getAllTools();
-const DRAG_ACTIVATION_PX = 10;
+const DRAG_ACTIVATION_PX = 8;
 const CLICK_SUPPRESS_MS = 220;
 
 export default function CatalogPage() {
@@ -16,15 +16,23 @@ export default function CatalogPage() {
     startY: 0,
     startScrollLeft: 0,
     moved: false,
+    pointerId: null as number | null,
   });
   const suppressClickUntilRef = useRef(0);
   const [isDragging, setIsDragging] = useState(false);
+
+  function detachDragListeners() {
+    window.removeEventListener('pointermove', handleWindowPointerMove);
+    window.removeEventListener('pointerup', handleWindowPointerEnd);
+    window.removeEventListener('pointercancel', handleWindowPointerEnd);
+  }
 
   useEffect(() => {
     return () => {
       if (animationFrameRef.current !== null) {
         cancelAnimationFrame(animationFrameRef.current);
       }
+      detachDragListeners();
     };
   }, []);
 
@@ -55,7 +63,7 @@ export default function CatalogPage() {
   }
 
   function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
-    if (event.pointerType === 'mouse' && event.button !== 0) {
+    if (event.pointerType !== 'mouse' || event.button !== 0) {
       return;
     }
 
@@ -70,16 +78,19 @@ export default function CatalogPage() {
       startY: event.clientY,
       startScrollLeft: viewport.scrollLeft,
       moved: false,
+      pointerId: event.pointerId,
     };
     setIsDragging(false);
     stopEdgePan();
-    viewport.setPointerCapture(event.pointerId);
+    window.addEventListener('pointermove', handleWindowPointerMove, { passive: false });
+    window.addEventListener('pointerup', handleWindowPointerEnd);
+    window.addEventListener('pointercancel', handleWindowPointerEnd);
   }
 
-  function handlePointerMove(event: PointerEvent<HTMLDivElement>) {
+  function handleWindowPointerMove(event: globalThis.PointerEvent) {
     const viewport = viewportRef.current;
     const state = dragStateRef.current;
-    if (!viewport || !state.active) {
+    if (!viewport || !state.active || state.pointerId !== event.pointerId) {
       return;
     }
 
@@ -99,22 +110,40 @@ export default function CatalogPage() {
     viewport.scrollLeft = state.startScrollLeft - deltaX;
   }
 
-  function handlePointerEnd(event: PointerEvent<HTMLDivElement>) {
-    const viewport = viewportRef.current;
-    if (!viewport || !dragStateRef.current.active) {
+  function handleWindowPointerEnd(event: globalThis.PointerEvent) {
+    const state = dragStateRef.current;
+    if (!state.active || state.pointerId !== event.pointerId) {
       return;
     }
 
-    const wasMoved = dragStateRef.current.moved;
+    const wasMoved = state.moved;
     dragStateRef.current.active = false;
     dragStateRef.current.moved = false;
+    dragStateRef.current.pointerId = null;
     setIsDragging(false);
     if (wasMoved) {
       suppressClickUntilRef.current = Date.now() + CLICK_SUPPRESS_MS;
     }
-    if (viewport.hasPointerCapture(event.pointerId)) {
-      viewport.releasePointerCapture(event.pointerId);
+    detachDragListeners();
+  }
+
+  function handleWheel(event: WheelEvent<HTMLDivElement>) {
+    const viewport = viewportRef.current;
+    if (!viewport) {
+      return;
     }
+
+    if (Math.abs(event.deltaX) > 0 || Math.abs(event.deltaY) < 1) {
+      return;
+    }
+
+    const canScrollHorizontally = viewport.scrollWidth > viewport.clientWidth;
+    if (!canScrollHorizontally) {
+      return;
+    }
+
+    viewport.scrollLeft += event.deltaY;
+    event.preventDefault();
   }
 
   function handleClickCapture(event: MouseEvent<HTMLDivElement>) {
@@ -149,15 +178,7 @@ export default function CatalogPage() {
           ref={viewportRef}
           className={`card-viewport${isDragging ? ' is-dragging' : ''}`}
           onPointerDown={handlePointerDown}
-          onPointerMove={handlePointerMove}
-          onPointerUp={handlePointerEnd}
-          onPointerCancel={handlePointerEnd}
-          onPointerLeave={(event) => {
-            if (!dragStateRef.current.active) {
-              stopEdgePan();
-            }
-            handlePointerEnd(event);
-          }}
+          onWheel={handleWheel}
           onClickCapture={handleClickCapture}
         >
           <div className="card-rail">
@@ -168,6 +189,8 @@ export default function CatalogPage() {
                   href={tool.external_href}
                   className="tool-strip-card"
                   aria-label={`进入 ${tool.name}`}
+                  draggable={false}
+                  onDragStart={(event) => event.preventDefault()}
                 >
                   <h2 className="strip-title">{tool.name}</h2>
                   <div className="strip-tags">
@@ -179,7 +202,14 @@ export default function CatalogPage() {
                   </div>
                 </a>
               ) : (
-                <Link key={tool.id} to={`/${tool.slug}`} className="tool-strip-card" aria-label={`进入 ${tool.name}`}>
+                <Link
+                  key={tool.id}
+                  to={`/${tool.slug}`}
+                  className="tool-strip-card"
+                  aria-label={`进入 ${tool.name}`}
+                  draggable={false}
+                  onDragStart={(event) => event.preventDefault()}
+                >
                   <h2 className="strip-title">{tool.name}</h2>
                   <div className="strip-tags">
                     {tool.tags.slice(0, 3).map((tag) => (

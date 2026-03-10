@@ -108,18 +108,29 @@ a {
 }
 
 .card-viewport {
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
   cursor: grab;
-  touch-action: pan-y;
+  touch-action: pan-x pan-y;
   user-select: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.card-viewport::-webkit-scrollbar {
+  display: none;
 }
 
 .card-viewport.is-dragging {
   cursor: grabbing;
+  scroll-behavior: auto;
 }
 
 .card-rail {
   display: flex;
+  width: max-content;
   gap: var(--card-gap);
   align-items: stretch;
   padding: 0.15rem 0;
@@ -149,6 +160,10 @@ a {
 .tool-strip-card:focus-visible {
   outline: 2px solid #f3f3f3;
   outline-offset: 2px;
+}
+
+.tool-strip-card:active {
+  transform: translateY(0);
 }
 
 .strip-title {
@@ -206,6 +221,21 @@ a {
 .edge-zone:focus-visible {
   outline: none;
   box-shadow: inset 0 0 0 1px rgba(220, 220, 220, 0.25);
+}
+
+@media (hover: none), (pointer: coarse) {
+  .catalog-title-wrap {
+    margin-inline: 0;
+  }
+
+  .catalog-rail-shell {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .edge-zone {
+    display: none;
+  }
 }
 
 .tool-link {
