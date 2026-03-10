@@ -70,6 +70,8 @@ sudo nginx -t && sudo nginx -s reload
 
 - `CLIPBOARD_DB_PATH=/app/data/clipboard.db`
 - `tools-api-data:/app/data` 持久卷
+- `tools-api` 以 root 运行（用于兼容不同存储驱动下的卷写权限）
+- `tools-api` 增加 `/api/readyz` 健康检查，`tools-web` 依赖其健康状态后再启动
 
 这意味着云帖数据会写入 Dokploy 持久卷，不会因为普通重启丢失。
 

@@ -4,12 +4,14 @@ COPY . .
 RUN cargo build --release -p tools-api
 
 FROM debian:bookworm-slim
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && rm -rf /var/lib/apt/lists/*
 RUN useradd --create-home --uid 10001 app
 WORKDIR /app
+RUN mkdir -p /app/data && chown -R app:app /app
 COPY --from=builder /app/target/release/tools-api /usr/local/bin/tools-api
 COPY --from=builder /app/registry /app/registry
 ENV TOOLS_REGISTRY_DIR=/app/registry/tools
+ENV CLIPBOARD_DB_PATH=/app/data/clipboard.db
 ENV RUST_LOG=info
 EXPOSE 8080
 USER app

@@ -5,8 +5,19 @@ services:
       context: .
       dockerfile: services/tools-api/Dockerfile
     restart: unless-stopped
+    user: "0:0"
+    environment:
+      CLIPBOARD_DB_PATH: /app/data/clipboard.db
     expose:
       - "8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/api/readyz >/dev/null || exit 1"]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    volumes:
+      - tools-api-data:/app/data
     networks:
       - tools-net
 
@@ -17,7 +28,8 @@ services:
       dockerfile: deploy/docker/Dockerfile.web
     restart: unless-stopped
     depends_on:
-      - tools-api
+      tools-api:
+        condition: service_healthy
     ports:
       - "127.0.0.1:4200:80"
     networks:
@@ -26,3 +38,6 @@ services:
 networks:
   tools-net:
     driver: bridge
+
+volumes:
+  tools-api-data:
