@@ -96,6 +96,12 @@ function resolveFsAllowList(): string[] {
 export default defineConfig({
   plugins: [serveColorSubmodPlugin(), react()],
   server: {
+    proxy: {
+      '/api': {
+        target: process.env.TOOLS_API_PROXY_TARGET || 'http://127.0.0.1:8080',
+        changeOrigin: true,
+      },
+    },
     fs: {
       allow: resolveFsAllowList(),
     },

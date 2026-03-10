@@ -64,12 +64,6 @@ function buildRequestCandidates(endpoint: ClipboardEndpoint): string[] {
 
   add(endpoint);
 
-  const host = window.location.hostname;
-  if ((host === '127.0.0.1' || host === 'localhost') && window.location.port !== '8080') {
-    add(`http://127.0.0.1:8080${endpoint}`);
-    add(`http://localhost:8080${endpoint}`);
-  }
-
   return candidates;
 }
 
