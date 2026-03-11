@@ -52,6 +52,7 @@ curl http://127.0.0.1:8080/api/readyz
 详见：[`docs/DEPLOY_DOKPLOY.md`](docs/DEPLOY_DOKPLOY.md)
 
 已内置一个外部静态工具入口：`/colorcard/`（构建来源 `submods/colorcard`）。
+外部静态工具按约定自动挂载：`external_href: /toolX/` 对应 `submods/toolX`。
 
 ## 自建服务器部署（备选）
 
@@ -143,3 +144,9 @@ npm run generate:catalog
 并确认生成文件已更新：
 - `apps/tools-web/src/generated/tool-manifests.ts`
 - `services/tools-api/config/tool-manifests.json`
+
+如果是外部静态工具（`external_href`），再执行：
+
+```bash
+npm run prepare:submods
+```

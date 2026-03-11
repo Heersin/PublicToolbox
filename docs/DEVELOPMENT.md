@@ -36,10 +36,13 @@ npm run validate:manifests
 # 2) 生成前后端目录产物
 npm run generate:catalog
 
-# 3) 前端构建（自动包含 catalog + wasm）
+# 3) 预处理 submods 外部静态工具
+npm run prepare:submods
+
+# 4) 前端构建（自动包含 catalog + submods + wasm）
 npm run build:web
 
-# 4) Rust 测试
+# 5) Rust 测试
 cargo test --workspace
 ```
 
@@ -56,7 +59,7 @@ cargo test --workspace
 - `input_schema`, `output_schema`
 - `wasm_entry`（前端 WASM 工具需要）
 - `api_endpoint`（服务端工具需要）
-- `external_href`（外部静态工具入口，可选）
+- `external_href`（外部静态工具入口，可选；例如 `/toolX/`）
 
 最小模板：
 
@@ -170,7 +173,7 @@ curl -X POST http://127.0.0.1:8080/api/tools/v1/run/sample-tool-x \
 - `?forceWasmFail=1` 时走 API fallback
 - 超长输入直接走 API guardrail 路径
 
-## 6. 场景 D：集成已有 dist 到子路由（例如 `/color`）
+## 6. 场景 D：集成已有 dist 到子路由（例如 `/colorcard`）
 
 适用场景：你已经有独立前端构建产物（例如 `submods/colorcard`），希望在工具站内通过卡片入口访问。
 
@@ -198,6 +201,12 @@ input_schema: schemas/color-input.json
 output_schema: schemas/color-output.json
 external_href: /colorcard/
 ```
+
+规则说明：
+
+- `external_href: /toolX/` 对应目录为 `submods/toolX`
+- 外部静态工具资源会被处理为 `/<toolX>/...` 路径（例如 `/<toolX>/assets/*`）
+- 不需要手工改 `Dockerfile.web` 或 `nginx.web.conf` 为每个工具单独加路由
 
 ### 6.3 自测清单
 
@@ -274,6 +283,7 @@ api_endpoint: /api/tools/v1/run/sample-server-tool
 ```bash
 npm run validate:manifests
 npm run generate:catalog
+npm run prepare:submods
 npm run build:web
 cargo test --workspace
 ```

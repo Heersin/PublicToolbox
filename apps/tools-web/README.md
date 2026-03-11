@@ -5,6 +5,7 @@
 1. 工具总览页（书简卡片滚动布局）。
 2. 工具路由页（`/:toolSlug`）。
 3. 根据 `execution_mode` 调用 WASM / API / Hybrid 执行链路。
+4. 托管外部静态子工具（`/<toolName>/`，来源 `submods/<toolName>`）。
 
 ## 目录说明
 
@@ -20,7 +21,7 @@
 # 开发
 npm run dev
 
-# 构建（会自动执行 catalog + wasm）
+# 构建（会自动执行 catalog + submods + wasm）
 npm run build
 
 # lint

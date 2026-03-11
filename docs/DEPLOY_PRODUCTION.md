@@ -35,6 +35,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 - `tools-web` 容器会在宿主机暴露 `127.0.0.1:4200`
 - `tools-api` 只在 Docker 网络内暴露 `8080`
 - `tools-web` 内部 Nginx 会把 `/api/*` 转发到 `tools-api:8080`
+- 外部静态子工具按 `external_href -> submods/<toolName>` 自动挂载（例如 `/colorcard/`）
 
 ### 2.3 配置主机 Nginx
 

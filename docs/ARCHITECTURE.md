@@ -14,7 +14,7 @@
 - 路由：
   - `/`：工具总览页（书简卡片）
   - `/:toolSlug`：工具执行页
-  - `/<toolName>/`：外部静态子工具入口（由 Nginx 直接托管 `submods/<toolName>`）
+  - `/<toolName>/`：外部静态子工具入口（由 Nginx 托管预处理后的 `.generated-submods/<toolName>`）
 - 运行时：
   - `wasmRuntime`：执行 `client-wasm`
   - `serverRuntime`：执行 `server-api`
@@ -47,6 +47,9 @@
   - 前端：`apps/tools-web/src/generated/tool-manifests.ts`
   - 后端：`services/tools-api/config/tool-manifests.json`
 - 可选字段：`external_href`（用于外部静态子工具入口，例如 `/colorcard/`）
+- 外部静态产物：
+  - 源目录：`submods/<toolName>`
+  - 预处理输出：`apps/tools-web/.generated-submods/<toolName>`
 
 ## 3. 模块关系图
 
@@ -95,13 +98,16 @@ flowchart LR
 flowchart TD
   M[registry/tools/*.yaml] --> V[npm run validate:manifests]
   M --> B[npm run generate:catalog]
+  M --> S[npm run prepare:submods]
   B --> G1[apps/tools-web/src/generated/tool-manifests.ts]
   B --> G2[services/tools-api/config/tool-manifests.json]
+  S --> G3[apps/tools-web/.generated-submods/*]
 ```
 
 说明：
 - `validate-manifests.mjs`：仅做 Schema 校验。
 - `build-tool-catalog.mjs`：做字段/重复性/保留 slug 检查并生成目录产物。
+- `prepare-submods.mjs`：按 `external_href` 同步外部静态工具并重写绝对资源路径。
 
 ## 6. 运行时约束与错误语义
 

@@ -42,11 +42,14 @@ CI 在以下事件触发：
 3. 安装 `wasm-pack`
 4. `npm run build:web`
 
+说明：`build:web` 的 `prebuild` 会执行 `prepare:submods`，因此会同时校验外部静态工具目录是否可用。
+
 失败常见原因：
 
 - `wasm-pack` 未正确安装
 - Rust/WASM 导出函数与前端 runtime 映射不一致
 - TypeScript 编译错误
+- 存在 `external_href`，但缺少对应 `submods/<toolName>` 目录
 
 ## 2.3 `rust-tests`
 
@@ -140,4 +143,3 @@ cargo test --workspace
 1. 增加文档链接检查（避免 README 链接失效）
 2. 增加 Shell 脚本静态检查（`shellcheck`）
 3. 增加部署前 smoke test job（仍不触发自动部署）
-

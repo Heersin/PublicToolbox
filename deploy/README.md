@@ -14,7 +14,7 @@
 3. Domain 绑定：`tools.heersin.cloud -> tools-web:80`。
 4. 触发 Deploy。
 
-说明：当前仓库已内置 `/colorcard/` 子工具（来源 `submods/colorcard`），Dokploy UI 里无需新增端口映射。
+说明：当前仓库已内置 `/colorcard/` 子工具（来源 `submods/colorcard`），并支持按 `external_href -> submods/<toolName>` 自动挂载。Dokploy UI 里无需新增端口映射。
 
 ## 关键文件
 

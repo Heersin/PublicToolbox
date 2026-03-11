@@ -26,7 +26,7 @@ sudo nginx -t && sudo nginx -s reload
 
 - `tools-web`：前端网关（容器内端口 `80`）
 - `tools-api`：后端 API（容器内端口 `8080`，仅内部访问）
-- `tools-web` 镜像会自动打包 `submods/colorcard` 并挂载为 `/colorcard/` 工具入口
+- `tools-web` 镜像会自动打包所有 `external_href` 对应的 `submods/<toolName>` 子工具
 
 ## 2. 配置域名与 HTTPS
 
@@ -92,8 +92,8 @@ sudo nginx -t && sudo nginx -s reload
 当你新增一个 dist 工具（例如 `/toolX`）时：
 
 1. 把构建产物放入仓库（例如 `submods/toolX`）
-2. 更新 `deploy/docker/Dockerfile.web` 与 `deploy/docker/nginx.web.conf`（新增 `/toolX` 路由映射）
-3. 新增 manifest 并设置 `external_href: /toolX/`
+2. 新增 manifest 并设置 `external_href: /toolX/`
+3. 执行 `npm run prepare:submods`（`build:web` 会自动执行）
 4. 在 Dokploy 点击 Redeploy（Compose 结构通常不需要改）
 
 ## 6. 故障排查
