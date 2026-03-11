@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "cipher output",
+  "type": "object",
+  "required": ["success", "result"],
+  "properties": {
+    "success": {
+      "type": "boolean"
+    },
+    "result": {
+      "type": "string"
+    },
+    "error": {
+      "type": ["string", "null"]
+    }
+  },
+  "additionalProperties": false
+}

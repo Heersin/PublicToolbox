@@ -15,6 +15,21 @@
     "output_schema": "schemas/agent-board-output.json"
   },
   {
+    "id": "classic-cipher-suite",
+    "slug": "cipher",
+    "name": "解符",
+    "description": "常见古典加密编解码工具，支持 Base64 自定义密码表。",
+    "tags": [
+      "cipher",
+      "classical",
+      "base64"
+    ],
+    "version": "0.1.0",
+    "execution_mode": "client-wasm",
+    "input_schema": "schemas/cipher-input.json",
+    "output_schema": "schemas/cipher-output.json"
+  },
+  {
     "id": "sample-tool-d",
     "slug": "clipboard",
     "name": "云帖",

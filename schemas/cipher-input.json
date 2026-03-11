@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "cipher input",
+  "type": "object",
+  "required": ["text", "algorithm", "direction"],
+  "properties": {
+    "text": {
+      "type": "string",
+      "maxLength": 20000
+    },
+    "algorithm": {
+      "type": "string",
+      "enum": ["caesar", "rot13", "atbash", "vigenere", "affine", "base64"]
+    },
+    "direction": {
+      "type": "string",
+      "enum": ["encode", "decode"]
+    },
+    "options": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
