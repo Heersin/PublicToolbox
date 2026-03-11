@@ -4,9 +4,9 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "predev": "node ../../scripts/build-tool-catalog.mjs && ../../scripts/build-wasm.sh",
+    "predev": "node ../../scripts/build-tool-catalog.mjs && node ../../scripts/prepare-submods.mjs && ../../scripts/build-wasm.sh",
     "dev": "vite",
-    "prebuild": "node ../../scripts/build-tool-catalog.mjs && ../../scripts/build-wasm.sh",
+    "prebuild": "node ../../scripts/build-tool-catalog.mjs && node ../../scripts/prepare-submods.mjs && ../../scripts/build-wasm.sh",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"

@@ -10,4 +10,3 @@ version: 0.1.0
 execution_mode: client-wasm
 input_schema: schemas/agent-board-input.json
 output_schema: schemas/agent-board-output.json
-external_href: /agent-board

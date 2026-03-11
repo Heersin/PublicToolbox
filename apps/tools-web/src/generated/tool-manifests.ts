@@ -30,8 +30,7 @@ export const toolManifests: ToolManifest[] = [
     "version": "0.1.0",
     "execution_mode": "client-wasm",
     "input_schema": "schemas/agent-board-input.json",
-    "output_schema": "schemas/agent-board-output.json",
-    "external_href": "/agent-board"
+    "output_schema": "schemas/agent-board-output.json"
   },
   {
     "id": "sample-tool-d",
@@ -50,8 +49,8 @@ export const toolManifests: ToolManifest[] = [
     "wasm_entry": "reverse_text"
   },
   {
-    "id": "color-static-submod",
-    "slug": "color",
+    "id": "colorcard-static-submod",
+    "slug": "colorcard",
     "name": "配色工坊",
     "description": "外部静态工具（来自 submods/colorcard dist）。",
     "tags": [
@@ -63,7 +62,7 @@ export const toolManifests: ToolManifest[] = [
     "execution_mode": "client-wasm",
     "input_schema": "schemas/color-input.json",
     "output_schema": "schemas/color-output.json",
-    "external_href": "/color/"
+    "external_href": "/colorcard/"
   },
   {
     "id": "suba-wasm-sample",

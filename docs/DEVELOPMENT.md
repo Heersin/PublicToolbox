@@ -50,7 +50,7 @@ cargo test --workspace
 关键字段：
 
 - `id`: 全局唯一
-- `slug`: URL 路由名（不能与 `api/assets/static/favicon.ico/colorcard` 冲突）
+- `slug`: URL 路由名（不能与 `api/assets/static/favicon.ico` 冲突）
 - `name`, `description`, `tags`, `version`
 - `execution_mode`: `client-wasm | server-api | hybrid`
 - `input_schema`, `output_schema`
@@ -177,16 +177,16 @@ curl -X POST http://127.0.0.1:8080/api/tools/v1/run/sample-tool-x \
 ### 6.1 最小步骤清单
 
 1. 将 dist 放入仓库（示例：`submods/colorcard`），确保未被 `.gitignore` 忽略。
-2. 新增 manifest，设置 `slug`（如 `color`）并加上 `external_href: /color/`。
-3. 在 `deploy/docker/Dockerfile.web` 复制该目录到 Nginx web 根（当前示例复制到 `/usr/share/nginx/html/color`）。
-4. 在 `deploy/docker/nginx.web.conf` 增加该路由（`/color` -> `/color/`，并将 `/color/*` 回退到 `/color/index.html`）。
+2. 新增 manifest，设置 `external_href`（如 `/colorcard/`）。
+3. 确保目录名和路由名一致（例如 `submods/colorcard` 对应 `/colorcard/`）。
+4. 执行 `npm run prepare:submods`（`dev/build` 会自动执行）。
 5. 重新部署 `tools-web`（Dokploy 里 Redeploy 即可）。
 
 ### 6.2 Manifest 示例（外部静态工具）
 
 ```yaml
-id: color-static-submod
-slug: color
+id: colorcard-static-submod
+slug: colorcard
 name: 配色工坊
 description: 外部静态工具（来自 submods/colorcard dist）。
 tags:
@@ -196,14 +196,14 @@ version: 0.1.0
 execution_mode: client-wasm
 input_schema: schemas/color-input.json
 output_schema: schemas/color-output.json
-external_href: /color/
+external_href: /colorcard/
 ```
 
 ### 6.3 自测清单
 
 - 总览页出现新书简卡片
-- 点击卡片可进入 `/color/`
-- 刷新 `/color/` 不 404
+- 点击卡片可进入 `/colorcard/`
+- 刷新 `/colorcard/` 不 404
 - `https://<domain>/api/readyz` 仍然可用（确认 API 反代未受影响）
 
 ## 7. 模板片段

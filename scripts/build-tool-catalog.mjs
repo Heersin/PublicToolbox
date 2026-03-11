@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 const registryDir = path.join(repoRoot, 'registry', 'tools');
 
-const reservedSlugs = new Set(['api', 'assets', 'static', 'favicon.ico', 'colorcard']);
+const reservedSlugs = new Set(['api', 'assets', 'static', 'favicon.ico']);
 
 function stableSortBySlug(a, b) {
   return a.slug.localeCompare(b.slug, 'en');

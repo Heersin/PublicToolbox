@@ -8,6 +8,7 @@
   "scripts": {
     "validate:manifests": "node scripts/validate-manifests.mjs",
     "generate:catalog": "node scripts/build-tool-catalog.mjs",
+    "prepare:submods": "node scripts/prepare-submods.mjs",
     "build:wasm": "./scripts/build-wasm.sh",
     "dev:web": "npm run --workspace apps/tools-web dev",
     "build:web": "npm run --workspace apps/tools-web build",

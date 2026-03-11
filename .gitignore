@@ -6,6 +6,7 @@ node_modules/
 **/*.log
 **/target/
 .env
+apps/tools-web/.generated-submods/
 data/
 !apps/tools-web/src/data/
 !apps/tools-web/src/data/agentScenarios.ts

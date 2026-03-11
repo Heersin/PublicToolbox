@@ -1,6 +1,6 @@
 import { toolManifests, type ToolManifest } from '../generated/tool-manifests';
 
-export const RESERVED_SLUGS = new Set(['api', 'assets', 'static', 'favicon.ico', 'colorcard']);
+export const RESERVED_SLUGS = new Set(['api', 'assets', 'static', 'favicon.ico']);
 
 export function getAllTools(): ToolManifest[] {
   return toolManifests;

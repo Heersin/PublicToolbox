@@ -51,7 +51,7 @@ curl http://127.0.0.1:8080/api/readyz
 
 详见：[`docs/DEPLOY_DOKPLOY.md`](docs/DEPLOY_DOKPLOY.md)
 
-已内置一个外部静态工具入口：`/color/`（构建来源 `submods/colorcard`）。
+已内置一个外部静态工具入口：`/colorcard/`（构建来源 `submods/colorcard`）。
 
 ## 自建服务器部署（备选）
 
@@ -88,6 +88,9 @@ npm run validate:manifests
 
 # 生成前后端工具目录产物
 npm run generate:catalog
+
+# 预处理 submods 外部静态工具（将绝对资源路径改为 /<toolName>/...）
+npm run prepare:submods
 
 # 单独构建 wasm 包
 npm run build:wasm

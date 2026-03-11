@@ -51,7 +51,7 @@ sudo nginx -s reload
 ```bash
 # 容器健康
 curl -fsS http://127.0.0.1:4200/
-curl -fsS http://127.0.0.1:4200/color/
+curl -fsS http://127.0.0.1:4200/colorcard/
 curl -fsS http://127.0.0.1:4200/api/readyz
 
 # 域名访问
