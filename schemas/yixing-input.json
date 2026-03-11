@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "yixing input",
+  "type": "object",
+  "required": [
+    "file",
+    "target_format"
+  ],
+  "properties": {
+    "file": {
+      "type": "string",
+      "description": "Image binary transported by multipart/form-data."
+    },
+    "target_format": {
+      "type": "string",
+      "enum": [
+        "png",
+        "jpg",
+        "webp"
+      ]
+    },
+    "background": {
+      "type": "string",
+      "pattern": "^#[0-9a-fA-F]{6}$",
+      "description": "Only used when target_format is jpg."
+    }
+  },
+  "additionalProperties": false
+}

@@ -1,10 +1,12 @@
 use axum::{
     Json, Router,
-    extract::{DefaultBodyLimit, Path, State},
-    http::StatusCode,
+    extract::{DefaultBodyLimit, Multipart, Path, State, multipart::MultipartRejection},
+    http::{HeaderMap, HeaderValue, StatusCode, header},
+    response::{IntoResponse, Response},
     routing::{get, post},
 };
 use base64::{Engine as _, engine::general_purpose::URL_SAFE_NO_PAD};
+use image::{DynamicImage, ImageFormat, RgbImage, codecs::jpeg::JpegEncoder};
 use rusqlite::{Connection, OptionalExtension, params};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -12,18 +14,23 @@ use sha2::{Digest, Sha256};
 use std::{
     collections::HashMap,
     fs,
+    io::Cursor,
     path::{Path as FsPath, PathBuf},
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tracing::info;
 
 const MAX_INPUT_CHARS: usize = 20_000;
+const MAX_IMAGE_FILE_BYTES: usize = 16 * 1024 * 1024;
+const MAX_MULTIPART_BODY_BYTES: usize = MAX_IMAGE_FILE_BYTES + (256 * 1024);
+const JPEG_QUALITY: u8 = 85;
 const RUN_TIMEOUT_SECONDS: u64 = 3;
 const MAX_PASSWORD_CHARS: usize = 20;
 const MIN_PHRASE_CHARS: usize = 3;
 const MAX_PHRASE_CHARS: usize = 32;
 const CLIPBOARD_RETENTION_SECONDS: i64 = 7 * 24 * 60 * 60;
 const CLIPBOARD_API_VERSION: &str = "clipboard-v1";
+const MEDIA_API_VERSION: &str = "media-v1";
 const DEFAULT_CLIPBOARD_DB_PATH: &str = "./data/clipboard.db";
 
 #[derive(Clone)]
@@ -134,6 +141,40 @@ struct ClipboardRecord {
     updated_at: i64,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum TargetImageFormat {
+    Png,
+    Jpg,
+    Webp,
+}
+
+impl TargetImageFormat {
+    fn parse(raw: &str) -> Option<Self> {
+        match raw {
+            "png" => Some(Self::Png),
+            "jpg" | "jpeg" => Some(Self::Jpg),
+            "webp" => Some(Self::Webp),
+            _ => None,
+        }
+    }
+
+    fn extension(self) -> &'static str {
+        match self {
+            Self::Png => "png",
+            Self::Jpg => "jpg",
+            Self::Webp => "webp",
+        }
+    }
+
+    fn content_type(self) -> &'static str {
+        match self {
+            Self::Png => "image/png",
+            Self::Jpg => "image/jpeg",
+            Self::Webp => "image/webp",
+        }
+    }
+}
+
 pub fn build_app() -> Result<Router, String> {
     let manifests = load_tool_manifests()?;
     let clipboard_db_path = resolve_clipboard_db_path();
@@ -155,10 +196,11 @@ fn build_router(tool_manifests: Vec<ToolManifest>, clipboard_db_path: PathBuf) -
         .route("/api/readyz", get(readyz))
         .route("/api/tools/v1/list", get(list_tools))
         .route("/api/tools/v1/run/{tool_id}", post(run_tool))
+        .route("/api/media/v1/convert-image", post(convert_image))
         .route("/api/clipboard/v1/get", post(get_clipboard))
         .route("/api/clipboard/v1/save", post(save_clipboard))
         .route("/api/clipboard/v1/clear", post(clear_clipboard))
-        .layer(DefaultBodyLimit::max(1_048_576))
+        .layer(DefaultBodyLimit::max(MAX_MULTIPART_BODY_BYTES))
         .with_state(app_state)
 }
 
@@ -368,6 +410,229 @@ async fn run_tool(
             )),
         ),
     }
+}
+
+async fn convert_image(multipart_result: Result<Multipart, MultipartRejection>) -> Response {
+    let started = Instant::now();
+
+    let mut multipart = match multipart_result {
+        Ok(payload) => payload,
+        Err(error) => {
+            return media_json_error(
+                StatusCode::BAD_REQUEST,
+                started.elapsed().as_millis(),
+                "INVALID_MULTIPART",
+                format!("invalid multipart payload: {error}"),
+            );
+        }
+    };
+
+    let mut file_bytes: Option<Vec<u8>> = None;
+    let mut file_name: Option<String> = None;
+    let mut target_format_raw: Option<String> = None;
+    let mut background_raw: Option<String> = None;
+
+    loop {
+        let maybe_field = match multipart.next_field().await {
+            Ok(field) => field,
+            Err(error) => {
+                return media_json_error(
+                    StatusCode::BAD_REQUEST,
+                    started.elapsed().as_millis(),
+                    "INVALID_MULTIPART",
+                    format!("failed reading multipart field: {error}"),
+                );
+            }
+        };
+
+        let Some(field) = maybe_field else {
+            break;
+        };
+
+        let field_name = field.name().unwrap_or_default().to_string();
+        match field_name.as_str() {
+            "file" => {
+                if file_bytes.is_some() {
+                    return media_json_error(
+                        StatusCode::BAD_REQUEST,
+                        started.elapsed().as_millis(),
+                        "INVALID_FIELD",
+                        String::from("duplicate file field"),
+                    );
+                }
+
+                file_name = field.file_name().map(str::to_string);
+                let bytes = match field.bytes().await {
+                    Ok(bytes) => bytes.to_vec(),
+                    Err(error) => {
+                        return media_json_error(
+                            StatusCode::BAD_REQUEST,
+                            started.elapsed().as_millis(),
+                            "INVALID_MULTIPART",
+                            format!("failed reading uploaded file: {error}"),
+                        );
+                    }
+                };
+
+                if bytes.len() > MAX_IMAGE_FILE_BYTES {
+                    return media_json_error(
+                        StatusCode::BAD_REQUEST,
+                        started.elapsed().as_millis(),
+                        "FILE_TOO_LARGE",
+                        format!("file exceeds {MAX_IMAGE_FILE_BYTES} bytes"),
+                    );
+                }
+
+                file_bytes = Some(bytes);
+            }
+            "target_format" => {
+                if target_format_raw.is_some() {
+                    return media_json_error(
+                        StatusCode::BAD_REQUEST,
+                        started.elapsed().as_millis(),
+                        "INVALID_FIELD",
+                        String::from("duplicate target_format field"),
+                    );
+                }
+
+                let value = match field.text().await {
+                    Ok(text) => text.trim().to_ascii_lowercase(),
+                    Err(error) => {
+                        return media_json_error(
+                            StatusCode::BAD_REQUEST,
+                            started.elapsed().as_millis(),
+                            "INVALID_MULTIPART",
+                            format!("failed reading target_format field: {error}"),
+                        );
+                    }
+                };
+                target_format_raw = Some(value);
+            }
+            "background" => {
+                if background_raw.is_some() {
+                    return media_json_error(
+                        StatusCode::BAD_REQUEST,
+                        started.elapsed().as_millis(),
+                        "INVALID_FIELD",
+                        String::from("duplicate background field"),
+                    );
+                }
+
+                let value = match field.text().await {
+                    Ok(text) => text.trim().to_string(),
+                    Err(error) => {
+                        return media_json_error(
+                            StatusCode::BAD_REQUEST,
+                            started.elapsed().as_millis(),
+                            "INVALID_MULTIPART",
+                            format!("failed reading background field: {error}"),
+                        );
+                    }
+                };
+
+                if !value.is_empty() {
+                    background_raw = Some(value);
+                }
+            }
+            _ => {}
+        }
+    }
+
+    let Some(bytes) = file_bytes else {
+        return media_json_error(
+            StatusCode::BAD_REQUEST,
+            started.elapsed().as_millis(),
+            "FILE_REQUIRED",
+            String::from("file field is required"),
+        );
+    };
+
+    if bytes.is_empty() {
+        return media_json_error(
+            StatusCode::BAD_REQUEST,
+            started.elapsed().as_millis(),
+            "EMPTY_FILE",
+            String::from("uploaded file is empty"),
+        );
+    }
+
+    let Some(target_format_value) = target_format_raw else {
+        return media_json_error(
+            StatusCode::BAD_REQUEST,
+            started.elapsed().as_millis(),
+            "TARGET_FORMAT_REQUIRED",
+            String::from("target_format field is required"),
+        );
+    };
+
+    let Some(target_format) = TargetImageFormat::parse(&target_format_value) else {
+        return media_json_error(
+            StatusCode::BAD_REQUEST,
+            started.elapsed().as_millis(),
+            "UNSUPPORTED_TARGET_FORMAT",
+            String::from("target_format must be png, jpg, or webp"),
+        );
+    };
+
+    let background = if target_format == TargetImageFormat::Jpg {
+        match background_raw {
+            Some(color) => match parse_background_color(&color) {
+                Ok(parsed) => Some(parsed),
+                Err(message) => {
+                    return media_json_error(
+                        StatusCode::BAD_REQUEST,
+                        started.elapsed().as_millis(),
+                        "INVALID_BACKGROUND",
+                        message,
+                    );
+                }
+            },
+            None => Some([255, 255, 255]),
+        }
+    } else {
+        None
+    };
+
+    let output_bytes = match convert_image_bytes(&bytes, target_format, background) {
+        Ok(bytes) => bytes,
+        Err(MediaConvertError::UnsupportedInputFormat(message)) => {
+            return media_json_error(
+                StatusCode::BAD_REQUEST,
+                started.elapsed().as_millis(),
+                "UNSUPPORTED_INPUT_FORMAT",
+                message,
+            );
+        }
+        Err(MediaConvertError::InvalidImageData(message)) => {
+            return media_json_error(
+                StatusCode::BAD_REQUEST,
+                started.elapsed().as_millis(),
+                "INVALID_IMAGE_DATA",
+                message,
+            );
+        }
+        Err(MediaConvertError::EncodeFailed(message)) => {
+            return media_json_error(
+                StatusCode::BAD_REQUEST,
+                started.elapsed().as_millis(),
+                "CONVERT_FAILED",
+                message,
+            );
+        }
+    };
+
+    let output_name = build_output_filename(file_name.as_deref(), target_format.extension());
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        header::CONTENT_TYPE,
+        HeaderValue::from_static(target_format.content_type()),
+    );
+    let content_disposition = format!("attachment; filename=\"{output_name}\"");
+    if let Ok(value) = HeaderValue::from_str(&content_disposition) {
+        headers.insert(header::CONTENT_DISPOSITION, value);
+    }
+
+    (StatusCode::OK, headers, output_bytes).into_response()
 }
 
 async fn get_clipboard(
@@ -861,6 +1126,130 @@ async fn clear_clipboard(
     )
 }
 
+#[derive(Debug)]
+enum MediaConvertError {
+    UnsupportedInputFormat(String),
+    InvalidImageData(String),
+    EncodeFailed(String),
+}
+
+fn media_json_error(status: StatusCode, duration_ms: u128, code: &'static str, message: String) -> Response {
+    (status, Json(error_response::<Value>(duration_ms, code, message, MEDIA_API_VERSION))).into_response()
+}
+
+fn parse_background_color(raw: &str) -> Result<[u8; 3], String> {
+    if raw.len() != 7 || !raw.starts_with('#') {
+        return Err(String::from("background must match #RRGGBB"));
+    }
+
+    let red = u8::from_str_radix(&raw[1..3], 16).map_err(|_| String::from("background has invalid red channel"))?;
+    let green =
+        u8::from_str_radix(&raw[3..5], 16).map_err(|_| String::from("background has invalid green channel"))?;
+    let blue =
+        u8::from_str_radix(&raw[5..7], 16).map_err(|_| String::from("background has invalid blue channel"))?;
+
+    Ok([red, green, blue])
+}
+
+fn build_output_filename(raw_file_name: Option<&str>, extension: &str) -> String {
+    let base = raw_file_name
+        .and_then(extract_safe_stem)
+        .unwrap_or_else(|| String::from("converted"));
+    format!("{base}-yixing.{extension}")
+}
+
+fn extract_safe_stem(raw_file_name: &str) -> Option<String> {
+    let slash_name = raw_file_name.rsplit('/').next().unwrap_or(raw_file_name);
+    let file_name = slash_name.rsplit('\\').next().unwrap_or(slash_name);
+    let stem = FsPath::new(file_name).file_stem()?.to_str()?.trim();
+
+    if stem.is_empty() {
+        return None;
+    }
+
+    let mut sanitized = String::with_capacity(stem.len());
+    for char in stem.chars() {
+        if char.is_ascii_alphanumeric() || char == '-' || char == '_' {
+            sanitized.push(char);
+        } else {
+            sanitized.push('-');
+        }
+    }
+
+    let normalized = sanitized.trim_matches('-').to_string();
+    if normalized.is_empty() {
+        None
+    } else {
+        Some(normalized)
+    }
+}
+
+fn is_supported_input_format(format: ImageFormat) -> bool {
+    matches!(format, ImageFormat::Png | ImageFormat::Jpeg | ImageFormat::WebP)
+}
+
+fn convert_image_bytes(
+    source_bytes: &[u8],
+    target_format: TargetImageFormat,
+    background: Option<[u8; 3]>,
+) -> Result<Vec<u8>, MediaConvertError> {
+    let source_format = image::guess_format(source_bytes).map_err(|error| {
+        MediaConvertError::InvalidImageData(format!("failed guessing source image format: {error}"))
+    })?;
+
+    if !is_supported_input_format(source_format) {
+        return Err(MediaConvertError::UnsupportedInputFormat(format!(
+            "unsupported source image format: {source_format:?}"
+        )));
+    }
+
+    let decoded = image::load_from_memory_with_format(source_bytes, source_format)
+        .map_err(|error| MediaConvertError::InvalidImageData(format!("failed decoding source image: {error}")))?;
+
+    match target_format {
+        TargetImageFormat::Png => encode_dynamic(&decoded, ImageFormat::Png),
+        TargetImageFormat::Webp => encode_dynamic(&decoded, ImageFormat::WebP),
+        TargetImageFormat::Jpg => encode_jpeg(&decoded, background.unwrap_or([255, 255, 255])),
+    }
+}
+
+fn encode_dynamic(image: &DynamicImage, format: ImageFormat) -> Result<Vec<u8>, MediaConvertError> {
+    let mut cursor = Cursor::new(Vec::new());
+    image
+        .write_to(&mut cursor, format)
+        .map_err(|error| MediaConvertError::EncodeFailed(format!("failed encoding image: {error}")))?;
+    Ok(cursor.into_inner())
+}
+
+fn encode_jpeg(image: &DynamicImage, background: [u8; 3]) -> Result<Vec<u8>, MediaConvertError> {
+    let flattened = flatten_for_jpeg(image, background);
+    let mut cursor = Cursor::new(Vec::new());
+    let mut encoder = JpegEncoder::new_with_quality(&mut cursor, JPEG_QUALITY);
+    encoder
+        .encode_image(&DynamicImage::ImageRgb8(flattened))
+        .map_err(|error| MediaConvertError::EncodeFailed(format!("failed encoding jpeg: {error}")))?;
+    Ok(cursor.into_inner())
+}
+
+fn flatten_for_jpeg(image: &DynamicImage, background: [u8; 3]) -> RgbImage {
+    let rgba = image.to_rgba8();
+    let (width, height) = rgba.dimensions();
+    let mut rgb = RgbImage::new(width, height);
+
+    for (x, y, pixel) in rgba.enumerate_pixels() {
+        let alpha = u16::from(pixel[3]);
+        let inv_alpha = 255 - alpha;
+
+        let red = ((u16::from(pixel[0]) * alpha) + (u16::from(background[0]) * inv_alpha) + 127) / 255;
+        let green = ((u16::from(pixel[1]) * alpha) + (u16::from(background[1]) * inv_alpha) + 127) / 255;
+        let blue = ((u16::from(pixel[2]) * alpha) + (u16::from(background[2]) * inv_alpha) + 127) / 255;
+
+        rgb.put_pixel(x, y, image::Rgb([red as u8, green as u8, blue as u8]));
+    }
+
+    rgb
+}
+
 fn normalize_phrase(raw: &str) -> Result<String, String> {
     let trimmed = raw.trim();
     if !(MIN_PHRASE_CHARS..=MAX_PHRASE_CHARS).contains(&trimmed.len()) {
@@ -1029,10 +1418,13 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use axum::{body::Body, http::Request};
+    use axum::{
+        body::Body,
+        http::{HeaderMap, Request, header},
+    };
     use http_body_util::BodyExt;
     use serde_json::Value;
-    use std::path::PathBuf;
+    use std::{io::Cursor, path::PathBuf};
     use tower::ServiceExt;
 
     fn sample_manifests() -> Vec<ToolManifest> {
@@ -1097,6 +1489,149 @@ mod tests {
         let body = response.into_body().collect().await.unwrap().to_bytes();
         let value: Value = serde_json::from_slice(&body).unwrap();
         (status, value)
+    }
+
+    async fn post_multipart(
+        app: &Router,
+        uri: &str,
+        boundary: &str,
+        payload: Vec<u8>,
+    ) -> (StatusCode, HeaderMap, Vec<u8>) {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri(uri)
+                    .header("content-type", format!("multipart/form-data; boundary={boundary}"))
+                    .body(Body::from(payload))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let status = response.status();
+        let headers = response.headers().clone();
+        let body = response.into_body().collect().await.unwrap().to_bytes().to_vec();
+        (status, headers, body)
+    }
+
+    async fn post_with_content_type(
+        app: &Router,
+        uri: &str,
+        content_type: &str,
+        payload: Vec<u8>,
+    ) -> (StatusCode, HeaderMap, Vec<u8>) {
+        let response = app
+            .clone()
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri(uri)
+                    .header("content-type", content_type)
+                    .body(Body::from(payload))
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        let status = response.status();
+        let headers = response.headers().clone();
+        let body = response.into_body().collect().await.unwrap().to_bytes().to_vec();
+        (status, headers, body)
+    }
+
+    fn append_text_field(body: &mut Vec<u8>, boundary: &str, name: &str, value: &str) {
+        body.extend_from_slice(format!("--{boundary}\r\n").as_bytes());
+        body.extend_from_slice(format!("Content-Disposition: form-data; name=\"{name}\"\r\n\r\n").as_bytes());
+        body.extend_from_slice(value.as_bytes());
+        body.extend_from_slice(b"\r\n");
+    }
+
+    fn append_file_field(
+        body: &mut Vec<u8>,
+        boundary: &str,
+        name: &str,
+        file_name: &str,
+        content_type: &str,
+        value: &[u8],
+    ) {
+        body.extend_from_slice(format!("--{boundary}\r\n").as_bytes());
+        body.extend_from_slice(
+            format!("Content-Disposition: form-data; name=\"{name}\"; filename=\"{file_name}\"\r\n").as_bytes(),
+        );
+        body.extend_from_slice(format!("Content-Type: {content_type}\r\n\r\n").as_bytes());
+        body.extend_from_slice(value);
+        body.extend_from_slice(b"\r\n");
+    }
+
+    fn build_image_convert_body(
+        boundary: &str,
+        target_format: Option<&str>,
+        background: Option<&str>,
+        file_name: Option<&str>,
+        file_bytes: Option<&[u8]>,
+    ) -> Vec<u8> {
+        let mut body = Vec::new();
+
+        if let Some(target_format) = target_format {
+            append_text_field(&mut body, boundary, "target_format", target_format);
+        }
+
+        if let Some(background) = background {
+            append_text_field(&mut body, boundary, "background", background);
+        }
+
+        if let (Some(file_name), Some(file_bytes)) = (file_name, file_bytes) {
+            append_file_field(
+                &mut body,
+                boundary,
+                "file",
+                file_name,
+                "application/octet-stream",
+                file_bytes,
+            );
+        }
+
+        body.extend_from_slice(format!("--{boundary}--\r\n").as_bytes());
+        body
+    }
+
+    fn parse_json_body(body: &[u8]) -> Value {
+        serde_json::from_slice(body).unwrap()
+    }
+
+    fn encoded_bytes(image: &DynamicImage, format: ImageFormat) -> Vec<u8> {
+        let mut cursor = Cursor::new(Vec::new());
+        image.write_to(&mut cursor, format).unwrap();
+        cursor.into_inner()
+    }
+
+    fn sample_png_with_alpha() -> Vec<u8> {
+        let mut rgba = image::RgbaImage::new(2, 2);
+        rgba.put_pixel(0, 0, image::Rgba([0, 0, 0, 0]));
+        rgba.put_pixel(1, 0, image::Rgba([0, 255, 0, 255]));
+        rgba.put_pixel(0, 1, image::Rgba([0, 0, 255, 255]));
+        rgba.put_pixel(1, 1, image::Rgba([255, 255, 255, 255]));
+        encoded_bytes(&DynamicImage::ImageRgba8(rgba), ImageFormat::Png)
+    }
+
+    fn sample_jpeg_rgb() -> Vec<u8> {
+        let mut rgb = image::RgbImage::new(2, 2);
+        rgb.put_pixel(0, 0, image::Rgb([250, 100, 20]));
+        rgb.put_pixel(1, 0, image::Rgb([20, 200, 30]));
+        rgb.put_pixel(0, 1, image::Rgb([40, 50, 250]));
+        rgb.put_pixel(1, 1, image::Rgb([255, 255, 255]));
+        encoded_bytes(&DynamicImage::ImageRgb8(rgb), ImageFormat::Jpeg)
+    }
+
+    fn sample_webp_with_alpha() -> Vec<u8> {
+        let mut rgba = image::RgbaImage::new(2, 2);
+        rgba.put_pixel(0, 0, image::Rgba([255, 0, 0, 255]));
+        rgba.put_pixel(1, 0, image::Rgba([0, 255, 0, 255]));
+        rgba.put_pixel(0, 1, image::Rgba([0, 0, 255, 255]));
+        rgba.put_pixel(1, 1, image::Rgba([0, 0, 0, 0]));
+        encoded_bytes(&DynamicImage::ImageRgba8(rgba), ImageFormat::WebP)
     }
 
     #[tokio::test]
@@ -1208,6 +1743,221 @@ mod tests {
         let body = response.into_body().collect().await.unwrap().to_bytes();
         let payload: Value = serde_json::from_slice(&body).unwrap();
         assert_eq!(payload["error"]["code"], Value::String("INVALID_INPUT".to_string()));
+
+        let _ = fs::remove_file(db_path);
+    }
+
+    #[tokio::test]
+    async fn convert_image_png_to_jpg_returns_binary() {
+        let (app, db_path) = test_app();
+        let boundary = "----tools-yixing-1";
+        let source = sample_png_with_alpha();
+        let body = build_image_convert_body(
+            boundary,
+            Some("jpg"),
+            Some("#ff0000"),
+            Some("sample.png"),
+            Some(&source),
+        );
+
+        let (status, headers, payload) =
+            post_multipart(&app, "/api/media/v1/convert-image", boundary, body).await;
+
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(headers.get(header::CONTENT_TYPE).unwrap(), "image/jpeg");
+        let disposition = headers
+            .get(header::CONTENT_DISPOSITION)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+        assert!(disposition.contains("sample-yixing.jpg"));
+        assert!(!payload.is_empty());
+
+        let decoded = image::load_from_memory_with_format(&payload, ImageFormat::Jpeg).unwrap();
+        assert_eq!(decoded.width(), 2);
+        assert_eq!(decoded.height(), 2);
+        let pixel = decoded.to_rgb8().get_pixel(0, 0).0;
+        assert!(pixel[0] > pixel[1] && pixel[0] > pixel[2]);
+
+        let _ = fs::remove_file(db_path);
+    }
+
+    #[tokio::test]
+    async fn convert_image_jpg_to_webp_returns_binary() {
+        let (app, db_path) = test_app();
+        let boundary = "----tools-yixing-2";
+        let source = sample_jpeg_rgb();
+        let body =
+            build_image_convert_body(boundary, Some("webp"), None, Some("photo.jpg"), Some(&source));
+
+        let (status, headers, payload) =
+            post_multipart(&app, "/api/media/v1/convert-image", boundary, body).await;
+
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(headers.get(header::CONTENT_TYPE).unwrap(), "image/webp");
+        let disposition = headers
+            .get(header::CONTENT_DISPOSITION)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+        assert!(disposition.contains("photo-yixing.webp"));
+        assert!(!payload.is_empty());
+
+        let decoded = image::load_from_memory_with_format(&payload, ImageFormat::WebP).unwrap();
+        assert_eq!(decoded.width(), 2);
+        assert_eq!(decoded.height(), 2);
+
+        let _ = fs::remove_file(db_path);
+    }
+
+    #[tokio::test]
+    async fn convert_image_webp_to_png_returns_binary() {
+        let (app, db_path) = test_app();
+        let boundary = "----tools-yixing-3";
+        let source = sample_webp_with_alpha();
+        let body =
+            build_image_convert_body(boundary, Some("png"), None, Some("alpha.webp"), Some(&source));
+
+        let (status, headers, payload) =
+            post_multipart(&app, "/api/media/v1/convert-image", boundary, body).await;
+
+        assert_eq!(status, StatusCode::OK);
+        assert_eq!(headers.get(header::CONTENT_TYPE).unwrap(), "image/png");
+        let disposition = headers
+            .get(header::CONTENT_DISPOSITION)
+            .unwrap()
+            .to_str()
+            .unwrap()
+            .to_string();
+        assert!(disposition.contains("alpha-yixing.png"));
+        assert!(!payload.is_empty());
+
+        let decoded = image::load_from_memory_with_format(&payload, ImageFormat::Png).unwrap();
+        assert_eq!(decoded.width(), 2);
+        assert_eq!(decoded.height(), 2);
+
+        let _ = fs::remove_file(db_path);
+    }
+
+    #[tokio::test]
+    async fn convert_image_rejects_missing_file() {
+        let (app, db_path) = test_app();
+        let boundary = "----tools-yixing-4";
+        let body = build_image_convert_body(boundary, Some("png"), None, None, None);
+        let (status, _headers, payload) =
+            post_multipart(&app, "/api/media/v1/convert-image", boundary, body).await;
+
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        let parsed = parse_json_body(&payload);
+        assert_eq!(parsed["error"]["code"], Value::String("FILE_REQUIRED".to_string()));
+
+        let _ = fs::remove_file(db_path);
+    }
+
+    #[tokio::test]
+    async fn convert_image_rejects_missing_target_format() {
+        let (app, db_path) = test_app();
+        let boundary = "----tools-yixing-5";
+        let source = sample_png_with_alpha();
+        let body = build_image_convert_body(boundary, None, None, Some("demo.png"), Some(&source));
+        let (status, _headers, payload) =
+            post_multipart(&app, "/api/media/v1/convert-image", boundary, body).await;
+
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        let parsed = parse_json_body(&payload);
+        assert_eq!(
+            parsed["error"]["code"],
+            Value::String("TARGET_FORMAT_REQUIRED".to_string())
+        );
+
+        let _ = fs::remove_file(db_path);
+    }
+
+    #[tokio::test]
+    async fn convert_image_rejects_invalid_target_format() {
+        let (app, db_path) = test_app();
+        let boundary = "----tools-yixing-6";
+        let source = sample_png_with_alpha();
+        let body = build_image_convert_body(boundary, Some("gif"), None, Some("demo.png"), Some(&source));
+        let (status, _headers, payload) =
+            post_multipart(&app, "/api/media/v1/convert-image", boundary, body).await;
+
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        let parsed = parse_json_body(&payload);
+        assert_eq!(
+            parsed["error"]["code"],
+            Value::String("UNSUPPORTED_TARGET_FORMAT".to_string())
+        );
+
+        let _ = fs::remove_file(db_path);
+    }
+
+    #[tokio::test]
+    async fn convert_image_rejects_oversized_input() {
+        let (app, db_path) = test_app();
+        let boundary = "----tools-yixing-7";
+        let oversized = vec![0_u8; MAX_IMAGE_FILE_BYTES + 1];
+        let body = build_image_convert_body(
+            boundary,
+            Some("jpg"),
+            None,
+            Some("large.png"),
+            Some(&oversized),
+        );
+        let (status, _headers, payload) =
+            post_multipart(&app, "/api/media/v1/convert-image", boundary, body).await;
+
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        let parsed = parse_json_body(&payload);
+        assert_eq!(parsed["error"]["code"], Value::String("FILE_TOO_LARGE".to_string()));
+
+        let _ = fs::remove_file(db_path);
+    }
+
+    #[tokio::test]
+    async fn convert_image_rejects_invalid_background() {
+        let (app, db_path) = test_app();
+        let boundary = "----tools-yixing-8";
+        let source = sample_png_with_alpha();
+        let body = build_image_convert_body(
+            boundary,
+            Some("jpg"),
+            Some("ff00aa"),
+            Some("demo.png"),
+            Some(&source),
+        );
+        let (status, _headers, payload) =
+            post_multipart(&app, "/api/media/v1/convert-image", boundary, body).await;
+
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        let parsed = parse_json_body(&payload);
+        assert_eq!(
+            parsed["error"]["code"],
+            Value::String("INVALID_BACKGROUND".to_string())
+        );
+
+        let _ = fs::remove_file(db_path);
+    }
+
+    #[tokio::test]
+    async fn convert_image_rejects_invalid_multipart_payload() {
+        let (app, db_path) = test_app();
+        let (status, _headers, payload) = post_with_content_type(
+            &app,
+            "/api/media/v1/convert-image",
+            "multipart/form-data",
+            b"broken".to_vec(),
+        )
+        .await;
+
+        assert_eq!(status, StatusCode::BAD_REQUEST);
+        let parsed = parse_json_body(&payload);
+        assert_eq!(
+            parsed["error"]["code"],
+            Value::String("INVALID_MULTIPART".to_string())
+        );
 
         let _ = fs::remove_file(db_path);
     }

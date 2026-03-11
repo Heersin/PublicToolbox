@@ -252,5 +252,21 @@ export const toolManifests: ToolManifest[] = [
     "input_schema": "schemas/subA-input.json",
     "output_schema": "schemas/subA-output.json",
     "wasm_entry": "reverse_text"
+  },
+  {
+    "id": "yixing-image-converter",
+    "slug": "yixing",
+    "name": "易形",
+    "description": "在服务端完成 PNG/JPG/WebP 单图互转，支持透明图转 JPG 时设置底色。",
+    "tags": [
+      "image",
+      "convert",
+      "webp"
+    ],
+    "version": "0.1.0",
+    "execution_mode": "server-api",
+    "input_schema": "schemas/yixing-input.json",
+    "output_schema": "schemas/yixing-output.json",
+    "api_endpoint": "/api/media/v1/convert-image"
   }
 ];

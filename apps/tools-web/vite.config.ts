@@ -95,6 +95,9 @@ function resolveFsAllowList(): string[] {
 export default defineConfig({
   plugins: [serveGeneratedSubmodsPlugin(), react()],
   server: {
+    host: '127.0.0.1',
+    port: 5173,
+    strictPort: true,
     proxy: {
       '/api': {
         target: process.env.TOOLS_API_PROXY_TARGET || 'http://127.0.0.1:8080',

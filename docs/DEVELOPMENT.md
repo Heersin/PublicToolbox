@@ -215,7 +215,35 @@ external_href: /colorcard/
 - 刷新 `/colorcard/` 不 404
 - `https://<domain>/api/readyz` 仍然可用（确认 API 反代未受影响）
 
-## 7. 模板片段
+## 7. 场景 E：文件上传型工具（示例：易形）
+
+适用场景：工具输入不是纯文本，而是文件（如图片、音频、PDF），需要上传并返回二进制下载。
+
+### 7.1 最小步骤清单
+
+1. 新增 manifest（建议 `execution_mode: server-api`，并填写真实 `api_endpoint`）。
+2. 新增 input/output schema（描述 multipart 入参和二进制响应语义）。
+3. 在 `services/tools-api/src/lib.rs` 增加独立路由（例如 `/api/media/v1/convert-image`）。
+4. API 使用 `multipart/form-data` 读取文件字段，并做二次大小校验（例如 16MB）。
+5. 前端新增专用页面（而不是复用 `ToolEntryPage.tsx` 文本输入框）。
+6. 在前端 runtime 使用 `fetch + FormData` 上传，并处理二进制响应下载。
+7. 同步 Nginx `client_max_body_size`，避免大文件被网关提前拦截。
+
+### 7.2 推荐返回约定
+
+- 成功：`200` + 二进制 body
+  - `Content-Type: image/png|image/jpeg|image/webp` 等
+  - `Content-Disposition: attachment; filename="xxx.ext"`
+- 失败：统一 JSON 错误结构
+  - `{ success:false, error:{ code, message }, meta:{ ... } }`
+
+### 7.3 自测清单
+
+- 正常路径：各输入格式到各目标格式的转换均可下载并可打开。
+- 异常路径：缺字段、格式非法、文件超限、multipart 解析失败均返回可读错误码。
+- 部署路径：线上网关不出现 `413 Request Entity Too Large`。
+
+## 8. 模板片段
 
 ### 7.1 Manifest（server-api）模板
 
@@ -269,7 +297,7 @@ api_endpoint: /api/tools/v1/run/sample-server-tool
 }
 ```
 
-## 8. 提交流程建议
+## 9. 提交流程建议
 
 每次新增工具建议包含：
 

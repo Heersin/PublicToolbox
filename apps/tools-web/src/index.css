@@ -777,6 +777,150 @@ a {
   font-weight: 600;
 }
 
+.yixing-page {
+  width: min(980px, 100% - 2rem);
+}
+
+.yixing-shell {
+  border: 1px solid #6f6f6f;
+  background: #d9d9d9;
+  margin-bottom: 0.75rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.yixing-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.58rem;
+}
+
+.yixing-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.yixing-field span {
+  font-size: 0.82rem;
+  color: #2b2b2b;
+}
+
+.yixing-file-field {
+  grid-column: span 2;
+}
+
+.yixing-input,
+.yixing-select {
+  width: 100%;
+  border: 1px solid #4e4e4e;
+  background: #f0f0f0;
+  color: #151515;
+  padding: 0.45rem 0.58rem;
+  font-family: inherit;
+}
+
+.yixing-color-field {
+  grid-column: span 1;
+}
+
+.yixing-color-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.yixing-color-input {
+  width: 54px;
+  height: 34px;
+  border: 1px solid #4e4e4e;
+  background: #f0f0f0;
+  padding: 0.12rem;
+  cursor: pointer;
+}
+
+.yixing-color-control code {
+  font-size: 0.82rem;
+  color: #212121;
+}
+
+.yixing-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin: 0;
+  padding: 0.2rem 0 0.35rem;
+  border-bottom: 1px solid #8b8b8b;
+}
+
+.yixing-meta p {
+  margin: 0;
+  color: #2d2d2d;
+  font-size: 0.84rem;
+}
+
+.yixing-preview {
+  border: 1px solid #5f5f5f;
+  background: #ececec;
+  min-height: 220px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.yixing-preview img {
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  background-image:
+    linear-gradient(45deg, #d2d2d2 25%, transparent 25%),
+    linear-gradient(-45deg, #d2d2d2 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #d2d2d2 75%),
+    linear-gradient(-45deg, transparent 75%, #d2d2d2 75%);
+  background-size: 20px 20px;
+  background-position:
+    0 0,
+    0 10px,
+    10px -10px,
+    -10px 0;
+}
+
+.yixing-preview p {
+  margin: 0;
+  color: #2a2a2a;
+  font-size: 0.86rem;
+}
+
+.yixing-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.yixing-status {
+  margin: 0;
+  border-top: 1px solid #8b8b8b;
+  padding-top: 0.55rem;
+  color: #272727;
+}
+
+.yixing-status.is-success {
+  color: #1e1e1e;
+}
+
+.yixing-status.is-error {
+  color: #3d3d3d;
+  font-weight: 600;
+}
+
+.yixing-download {
+  margin: 0;
+  font-size: 0.84rem;
+  color: #2b2b2b;
+}
+
 @media (max-width: 1450px) {
   .catalog-page {
     --window-size: 10;
@@ -887,5 +1031,27 @@ a {
 
   .cipher-textarea {
     min-height: 210px;
+  }
+
+  .yixing-page {
+    width: min(980px, 100% - 1rem);
+  }
+
+  .yixing-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .yixing-file-field,
+  .yixing-color-field {
+    grid-column: span 1;
+  }
+
+  .yixing-meta {
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .yixing-preview {
+    min-height: 180px;
   }
 }

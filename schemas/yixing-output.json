@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "yixing output",
+  "type": "object",
+  "required": [
+    "file"
+  ],
+  "properties": {
+    "file": {
+      "type": "string",
+      "description": "Converted image binary response body."
+    },
+    "filename": {
+      "type": "string"
+    },
+    "content_type": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false
+}
