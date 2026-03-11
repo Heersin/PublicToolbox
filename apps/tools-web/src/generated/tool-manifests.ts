@@ -20,7 +20,7 @@ export const toolManifests: ToolManifest[] = [
   {
     "id": "agent-board-bulletin",
     "slug": "agent-board",
-    "name": "机衡碑录",
+    "name": "告示",
     "description": "Agent 安全测试公告板，用于灰盒评估是否存在越权执行倾向。",
     "tags": [
       "agent",
