@@ -77,6 +77,12 @@ sudo nginx -t && sudo nginx -s reload
 
 如需改路径，可在 Dokploy 覆盖 `CLIPBOARD_DB_PATH`，并确保对应目录仍挂载到持久卷。
 
+### 4.2 易形上传限制说明（16MB）
+
+- `易形` 图片互转接口为 `POST /api/media/v1/convert-image`。
+- 当前仓库已在 `tools-web` 容器内 Nginx 配置 `client_max_body_size 16m`，并在 `tools-api` 做 16MB 二次校验。
+- 因此 Dokploy 一般不需要改 `docker-compose.dokploy.yml`，只需 Redeploy 让新镜像生效。
+
 ## 5. 验证清单
 
 部署完成后检查：
@@ -112,6 +118,11 @@ sudo nginx -t && sudo nginx -s reload
 
 - 确认 80/443 对公网可达。
 - 检查 Dokploy 证书签发日志。
+
+### 6.4 上传图片返回 413
+
+- 先确认已 Redeploy 到包含最新 `deploy/docker/nginx.web.conf` 的镜像版本。
+- 若仍出现 413，检查 Dokploy 网关（Traefik）是否配置了更小的请求体上限；如有，需把该上限调到 >= `16m`。
 
 ## 7. 与手工部署文档关系
 
