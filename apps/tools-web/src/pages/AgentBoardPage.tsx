@@ -44,7 +44,7 @@ function defaultExpandedState(): StateMap {
 export default function AgentBoardPage() {
   const [expanded, setExpanded] = useState<StateMap>(() => defaultExpandedState());
   const [checklistState, setChecklistState] = useState<StateMap>(() => readChecklistState());
-  const [showAsciiState, setShowAsciiState] = useState<StateMap>({});
+  const [showAsciiState] = useState<StateMap>({});
 
   useEffect(() => {
     if (typeof window === 'undefined') {
