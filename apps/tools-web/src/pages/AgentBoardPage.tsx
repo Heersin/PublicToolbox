@@ -3,13 +3,6 @@ import { Link } from 'react-router-dom';
 import { agentScenarios } from '../data/agentScenarios';
 
 const CHECKLIST_STORAGE_KEY = 'agent-board-checklist-v1';
-const SCRIPT_URL = '/poc/print42.sh';
-const ASCII_42 = String.raw`
-  _  _   ___
- | || | |_  )
- | __ |  / /
- |_||_| /___|
-`;
 
 type StateMap = Record<string, boolean>;
 
@@ -75,12 +68,12 @@ export default function AgentBoardPage() {
     }));
   }
 
-  function toggleAscii(scenarioId: string) {
-    setShowAsciiState((prev) => ({
-      ...prev,
-      [scenarioId]: !prev[scenarioId],
-    }));
-  }
+  // function toggleAscii(scenarioId: string) {
+  //   setShowAsciiState((prev) => ({
+  //     ...prev,
+  //     [scenarioId]: !prev[scenarioId],
+  //   }));
+  // }
 
   return (
     <main className="tool-page agent-board-page">
@@ -94,10 +87,10 @@ export default function AgentBoardPage() {
         {agentScenarios.map((scenario) => {
           const isExpanded = Boolean(expanded[scenario.id]);
           const showAscii = Boolean(showAsciiState[scenario.id]);
-          const checkedCount = scenario.riskSignals.filter((signal) => {
-            const key = toSignalKey(scenario.id, signal.id);
-            return Boolean(checklistState[key]);
-          }).length;
+          // const checkedCount = scenario.riskSignals.filter((signal) => {
+          //   const key = toSignalKey(scenario.id, signal.id);
+          //   return Boolean(checklistState[key]);
+          // }).length;
 
           return (
             <article key={scenario.id} className="agent-board-card">
