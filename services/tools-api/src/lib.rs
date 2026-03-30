@@ -20,7 +20,8 @@ use std::{
 };
 use tracing::info;
 
-const MAX_INPUT_CHARS: usize = 20_000;
+const MAX_TOOL_INPUT_CHARS: usize = 20_000;
+const MAX_CLIPBOARD_INPUT_CHARS: usize = 200_000;
 const MAX_IMAGE_FILE_BYTES: usize = 16 * 1024 * 1024;
 const MAX_MULTIPART_BODY_BYTES: usize = MAX_IMAGE_FILE_BYTES + (256 * 1024);
 const JPEG_QUALITY: u8 = 85;
@@ -355,13 +356,13 @@ async fn run_tool(
         }
     };
 
-    if text.len() > MAX_INPUT_CHARS {
+    if text.chars().count() > MAX_TOOL_INPUT_CHARS {
         return (
             StatusCode::BAD_REQUEST,
             Json(error_response(
                 started.elapsed().as_millis(),
                 "INPUT_TOO_LARGE",
-                format!("input text exceeds {MAX_INPUT_CHARS} characters"),
+                format!("input text exceeds {MAX_TOOL_INPUT_CHARS} characters"),
                 &tool.version,
             )),
         );
@@ -805,13 +806,13 @@ async fn save_clipboard(
         );
     }
 
-    if request.text.len() > MAX_INPUT_CHARS {
+    if request.text.chars().count() > MAX_CLIPBOARD_INPUT_CHARS {
         return (
             StatusCode::BAD_REQUEST,
             Json(error_response(
                 started.elapsed().as_millis(),
                 "INVALID_INPUT",
-                format!("text exceeds {MAX_INPUT_CHARS} characters"),
+                format!("text exceeds {MAX_CLIPBOARD_INPUT_CHARS} characters"),
                 CLIPBOARD_API_VERSION,
             )),
         );
@@ -2132,7 +2133,7 @@ mod tests {
             Value::String("INVALID_PASSWORD".to_string())
         );
 
-        let long_text = "a".repeat(MAX_INPUT_CHARS + 1);
+        let long_text = "a".repeat(MAX_CLIPBOARD_INPUT_CHARS + 1);
         let (status, text_payload) = post_json(
             &app,
             "/api/clipboard/v1/save",

@@ -8,7 +8,7 @@ import {
   saveClipboard,
 } from '../lib/runtime/clipboardRuntime';
 
-const MAX_INPUT_CHARS = 20000;
+const MAX_INPUT_CHARS = 200000;
 const MAX_PASSWORD_CHARS = 20;
 const PHRASE_PATTERN = /^[A-Za-z0-9_-]{3,32}$/;
 const LAST_PHRASE_KEY = 'toolbox.clipboard.lastPhrase';
@@ -27,6 +27,10 @@ function draftKey(phrase: string): string {
 function buildShareUrl(phrase: string): string {
   const safePath = `/clipboard/${encodeURIComponent(phrase)}`;
   return `${window.location.origin}${safePath}`;
+}
+
+function countCharacters(value: string): number {
+  return Array.from(value).length;
 }
 
 function formatUpdatedAt(updatedAt: string): string {
@@ -126,6 +130,7 @@ export default function ClipboardPage() {
   const [running, setRunning] = useState(false);
 
   const normalizedPhrase = useMemo(() => normalizePhrase(phraseInput), [phraseInput]);
+  const inputCharCount = useMemo(() => countCharacters(textInput), [textInput]);
   const effectivePassword = passwordEnabled ? passwordInput : '';
   const shareUrl = useMemo(
     () => (validatePhrase(normalizedPhrase) ? '' : buildShareUrl(normalizedPhrase)),
@@ -198,7 +203,7 @@ export default function ClipboardPage() {
       return;
     }
 
-    if (textInput.length > MAX_INPUT_CHARS) {
+    if (inputCharCount > MAX_INPUT_CHARS) {
       setStatus(`内容最多 ${MAX_INPUT_CHARS} 个字符。`, 'error');
       return;
     }
@@ -282,7 +287,7 @@ export default function ClipboardPage() {
 
     try {
       const incoming = await navigator.clipboard.readText();
-      if (incoming.length > MAX_INPUT_CHARS) {
+      if (countCharacters(incoming) > MAX_INPUT_CHARS) {
         setStatus(`粘贴内容超过 ${MAX_INPUT_CHARS} 字符，已拒绝。`, 'error');
         return;
       }
@@ -419,7 +424,7 @@ export default function ClipboardPage() {
         </div>
 
         <div className="clipboard-meta">
-          <p>字符数：{textInput.length} / {MAX_INPUT_CHARS}</p>
+          <p>字符数：{inputCharCount} / {MAX_INPUT_CHARS}</p>
           <p>短语状态：{exists ? '已存在' : '未创建'}</p>
           <p>口令保护：{hasPassword ? '已启用' : '未启用'}</p>
           <p>最近更新：{formatUpdatedAt(updatedAt)}</p>
@@ -428,7 +433,7 @@ export default function ClipboardPage() {
         <textarea
           value={textInput}
           onChange={(event) => {
-            if (event.target.value.length > MAX_INPUT_CHARS) {
+            if (countCharacters(event.target.value) > MAX_INPUT_CHARS) {
               setStatus(`内容最多 ${MAX_INPUT_CHARS} 个字符。`, 'error');
               return;
             }
